@@ -8,10 +8,12 @@ import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import ru.practicum.client.exception.StatsServerUnavailable;
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.ViewStatsDto;
 
 import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.http.*;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestTemplate;
@@ -22,13 +24,19 @@ public class StatsClientImpl implements StatsClient {
 
     private final RetryTemplate retryTemplate;
     private final RestTemplate restTemplate;
-    private final ServiceInstance serviceInstance;
     private final String app;
+    private final String serviceId;
+    private final DiscoveryClient discoveryClient;
 
-    public StatsClientImpl(RestTemplate restTemplate, ServiceInstance serviceInstance, String app) {
+    public StatsClientImpl(
+            RestTemplate restTemplate,
+            String serviceId,
+            String app,
+            DiscoveryClient discoveryClient) {
+        this.discoveryClient = discoveryClient;
         retryTemplate = RetryTemplate.builder().maxAttempts(3).fixedBackoff(3000).build();
         this.restTemplate = restTemplate;
-        this.serviceInstance = serviceInstance;
+        this.serviceId = serviceId;
         this.app = app;
     }
 
@@ -78,8 +86,17 @@ public class StatsClientImpl implements StatsClient {
     }
 
     private String makeUri(String path) {
-        ServiceInstance instance = retryTemplate.execute(cxt -> serviceInstance);
+        ServiceInstance instance = retryTemplate.execute(cxt -> getInstance(serviceId));
         return URI.create("http://" + instance.getHost() + ":" + instance.getPort() + path)
                 .toString();
+    }
+
+    private ServiceInstance getInstance(String serviceId) {
+        try {
+            return discoveryClient.getInstances(serviceId).getFirst();
+        } catch (Exception exception) {
+            throw new StatsServerUnavailable(
+                    "Ошибка обнаружения адреса сервиса статистики с id: " + serviceId, exception);
+        }
     }
 }
