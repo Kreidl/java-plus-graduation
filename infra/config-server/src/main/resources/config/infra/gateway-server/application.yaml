@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+spring:
+  output:
+    ansi:
+      enabled: always
+  cloud:
+    gateway:
+      discovery.locator.enabled: true
+      default-filters:
+        - name: Retry
+          args:
+            retries: 3
+            series: SERVER_ERROR # Повторять при 5xx ошибках
+            methods: GET, POST, PUT
+      routes:
+        - id: main-service
+          uri: lb://main-service
+          predicates:
+            - Path=/**
