@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ru.practicum.request.dto.ConfirmedRequestsCount;
 import ru.practicum.request.model.EventRequestStatus;
 import ru.practicum.request.model.ParticipationRequest;
 

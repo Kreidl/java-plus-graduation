@@ -10,11 +10,11 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import ru.practicum.comment.dto.CommentDto;
 import ru.practicum.comment.service.CommentService;
-import ru.practicum.comment.service.CommentsPublicGetRequest;
+import ru.practicum.comment.dto.CommentsPublicGetRequest;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.service.EventService;
-import ru.practicum.event.service.EventsPublicGetRequest;
+import ru.practicum.event.dto.EventsPublicGetRequest;
 import ru.practicum.exception.ValidationException;
 
 import org.springframework.validation.annotation.Validated;

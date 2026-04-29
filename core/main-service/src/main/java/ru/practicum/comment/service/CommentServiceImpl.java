@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import ru.practicum.comment.dto.CommentDto;
+import ru.practicum.comment.dto.*;
 import ru.practicum.comment.mapper.CommentMapper;
 import ru.practicum.comment.model.Comment;
 import ru.practicum.comment.repository.CommentRepository;
@@ -97,6 +97,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CommentDto getById(Long commentId) {
         Comment comment = getCommentByIdOrThrow(commentId);
         return CommentMapper.toCommentDto(comment, comment.getAuthor());

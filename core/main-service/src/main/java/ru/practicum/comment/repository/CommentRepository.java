@@ -2,6 +2,7 @@ package ru.practicum.comment.repository;
 
 import java.util.List;
 
+import ru.practicum.comment.dto.EventCommentCount;
 import ru.practicum.comment.model.Comment;
 
 import org.springframework.data.domain.Page;

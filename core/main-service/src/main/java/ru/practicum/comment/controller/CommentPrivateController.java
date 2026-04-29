@@ -6,9 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
-import ru.practicum.comment.dto.CommentDto;
-import ru.practicum.comment.dto.NewCommentDto;
-import ru.practicum.comment.dto.UpdateCommentDto;
+import ru.practicum.comment.dto.*;
 import ru.practicum.comment.service.*;
 
 import org.springframework.http.HttpStatus;

@@ -1,10 +1,9 @@
-package ru.practicum.event.service;
+package ru.practicum.comment.dto;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-public record EventsPrivateGetRequest(Long userId, int from, int size) {
-
+public record CommentsPublicGetRequest(long eventId, int from, int size) {
     public Pageable getPageable() {
         int page = from / size;
         return PageRequest.of(page, size);

@@ -1,4 +1,4 @@
-package ru.practicum.compilation.service;
+package ru.practicum.compilation.dto;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

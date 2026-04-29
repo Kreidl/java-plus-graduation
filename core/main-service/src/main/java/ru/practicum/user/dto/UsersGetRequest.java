@@ -1,4 +1,4 @@
-package ru.practicum.user.service;
+package ru.practicum.user.dto;
 
 import java.util.List;
 

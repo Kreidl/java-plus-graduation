@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import ru.practicum.compilation.dto.CompilationDto;
-import ru.practicum.compilation.service.CompilationsPublicGetRequest;
+import ru.practicum.compilation.dto.CompilationsPublicGetRequest;
 import ru.practicum.compilation.service.CompilationsService;
 
 import org.springframework.validation.annotation.Validated;

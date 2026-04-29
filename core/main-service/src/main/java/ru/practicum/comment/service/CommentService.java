@@ -2,7 +2,7 @@ package ru.practicum.comment.service;
 
 import java.util.Collection;
 
-import ru.practicum.comment.dto.CommentDto;
+import ru.practicum.comment.dto.*;
 
 public interface CommentService {
     Collection<CommentDto> getAllCommentsPaged(CommentsPublicGetRequest request);

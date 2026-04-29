@@ -1,4 +1,4 @@
-package ru.practicum.request.repository;
+package ru.practicum.request.dto;
 
 public interface ConfirmedRequestsCount {
 

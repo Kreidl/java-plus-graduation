@@ -11,7 +11,7 @@ import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
 import ru.practicum.client.StatsClient;
 import ru.practicum.comment.repository.CommentRepository;
-import ru.practicum.comment.repository.EventCommentCount;
+import ru.practicum.comment.dto.EventCommentCount;
 import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.event.controller.EventSortBy;
 import ru.practicum.event.dto.*;

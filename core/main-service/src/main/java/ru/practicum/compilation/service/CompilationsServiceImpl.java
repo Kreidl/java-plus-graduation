@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import ru.practicum.compilation.dto.CompilationDto;
+import ru.practicum.compilation.dto.CompilationsPublicGetRequest;
 import ru.practicum.compilation.dto.NewCompilationDto;
 import ru.practicum.compilation.dto.UpdateCompilationRequest;
 import ru.practicum.compilation.mapper.CompilationsMapper;
