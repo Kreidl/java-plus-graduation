@@ -21,7 +21,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     @Query(
             """
-                select new ru.practicum.comment.repository.EventCommentCount(c.event.id, count(c))
+                select new ru.practicum.comment.dto.EventCommentCount(c.event.id, count(c))
                 from Comment c
                 where c.event.id in :eventIds
                 group by c.event.id
