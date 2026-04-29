@@ -1,14 +1,40 @@
 services:
-  stats-server:
-    ports:
-      - "9090:9090"
-
   stats-db:
-    image: postgres:16.1
-
-  ewm-service:
+    image: postgres:17.7-alpine3.23
+    container_name: stats-db
+    restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "13000:5432"
+    environment:
+      - POSTGRES_DB=stats
+      - POSTGRES_USER=stats_user
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - stats-db-data:/var/lib/postgresql/data/
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
 
   ewm-db:
-    image: postgres:16.1
+    image: postgres:17.7-alpine3.23
+    container_name: ewm-db
+    restart: unless-stopped
+    ports:
+      - "13001:5432"
+    environment:
+      - POSTGRES_DB=ewm
+      - POSTGRES_USER=ewm_user
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - ewm-db-data:/var/lib/postgresql/data/
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+volumes:
+  stats-db-data:
+  ewm-db-data:

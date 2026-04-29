@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+stats-server:
+  url: ${STATS_SERVER_URL:http://stats-server:9090}
+  app: ${STATS_SERVER_APP:ewm-main-service}
+
+spring:
+  application:
+    name: main-service
+  #  config:
+  #    import: "configserver:"
+#  cloud:
+#    config:
+#      discovery:
+#        enabled: true
+#        serviceId: config-server
+#      fail-fast: true
+#      retry:
+#        useRandomPolicy: true
+#        max-interval: 6000
+
+  datasource:
+    url: jdbc:h2:mem:ewm-db
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  sql:
+    init:
+      mode: embedded
+
+logging:
+  level:
+    org:
+      hibernate:
+        orm:
+          jdbc:
+            bind: trace
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
