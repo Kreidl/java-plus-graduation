@@ -9,8 +9,8 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import ru.practicum.user.dto.NewUserRequest;
 import ru.practicum.user.dto.UserDto;
-import ru.practicum.user.service.UserService;
 import ru.practicum.user.dto.UsersGetRequest;
+import ru.practicum.user.service.UserService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;

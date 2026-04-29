@@ -8,10 +8,10 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
+import ru.practicum.event.dto.EventsPrivateGetRequest;
 import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.dto.UpdateEventUserRequest;
 import ru.practicum.event.service.EventService;
-import ru.practicum.event.dto.EventsPrivateGetRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;

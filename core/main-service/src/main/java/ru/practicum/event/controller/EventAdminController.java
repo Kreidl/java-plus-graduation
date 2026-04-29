@@ -9,10 +9,10 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import ru.practicum.event.dto.EventFullDto;
+import ru.practicum.event.dto.EventsAdminGetRequest;
 import ru.practicum.event.dto.UpdateEventAdminRequest;
 import ru.practicum.event.model.EventState;
 import ru.practicum.event.service.EventService;
-import ru.practicum.event.dto.EventsAdminGetRequest;
 
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;

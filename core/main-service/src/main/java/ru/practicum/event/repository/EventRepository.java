@@ -5,11 +5,11 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
+import ru.practicum.event.dto.EventsAdminGetRequest;
+import ru.practicum.event.dto.EventsPublicGetRequest;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
 import ru.practicum.event.model.QEvent;
-import ru.practicum.event.dto.EventsAdminGetRequest;
-import ru.practicum.event.dto.EventsPublicGetRequest;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
