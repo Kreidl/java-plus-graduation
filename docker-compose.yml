@@ -17,18 +17,72 @@ services:
       interval: 5s
       retries: 10
 
-  ewm-db:
+  event-db:
     image: postgres:17.7-alpine3.23
-    container_name: ewm-db
+    container_name: event-db
     restart: unless-stopped
     ports:
       - "13001:5432"
     environment:
-      - POSTGRES_DB=ewm
-      - POSTGRES_USER=ewm_user
+      - POSTGRES_DB=event
+      - POSTGRES_USER=event_user
       - POSTGRES_PASSWORD=secret
     volumes:
-      - ewm-db-data:/var/lib/postgresql/data/
+      - event-db-data:/var/lib/postgresql/data/
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  user-db:
+    image: postgres:17.7-alpine3.23
+    container_name: user-db
+    restart: unless-stopped
+    ports:
+      - "13002:5432"
+    environment:
+      - POSTGRES_DB=user
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - user-db-data:/var/lib/postgresql/data/
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  request-db:
+    image: postgres:17.7-alpine3.23
+    container_name: request-db
+    restart: unless-stopped
+    ports:
+      - "13003:5432"
+    environment:
+      - POSTGRES_DB=request
+      - POSTGRES_USER=request_user
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - request-db-data:/var/lib/postgresql/data/
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  comment-db:
+    image: postgres:17.7-alpine3.23
+    container_name: comment-db
+    restart: unless-stopped
+    ports:
+      - "13004:5432"
+    environment:
+      - POSTGRES_DB=comment
+      - POSTGRES_USER=comment_user
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - comment-db-data:/var/lib/postgresql/data/
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -37,4 +91,7 @@ services:
 
 volumes:
   stats-db-data:
-  ewm-db-data:
+  event-db-data:
+  user-db-data:
+  request-db-data:
+  comment-db-data:

@@ -10,18 +10,12 @@
     <artifactId>core</artifactId>
     <packaging>pom</packaging>
 
-    <name>core</name>
-    <url>http://maven.apache.org</url>
     <modules>
-        <module>main-service</module>
+        <module>interaction-api</module>
+        <module>event-service</module>
+        <module>request-service</module>
+        <module>user-service</module>
+        <module>comment-service</module>
     </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>3.8.1</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 </project>
