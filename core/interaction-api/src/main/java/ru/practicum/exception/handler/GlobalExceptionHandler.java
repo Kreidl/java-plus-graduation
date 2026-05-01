@@ -173,7 +173,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FallbackException.class)
     public ApiError handleFallbackException(FallbackException e) {
         log.warn("Exception occurred: {}", e.getMessage(), e);
-        return new ApiError(null, e.getMessage(), "Server exception",
-                HttpStatus.GATEWAY_TIMEOUT.toString(), LocalDateTime.now());
+        return new ApiError(
+                null,
+                e.getMessage(),
+                "Server exception",
+                HttpStatus.GATEWAY_TIMEOUT.toString(),
+                LocalDateTime.now());
     }
 }
