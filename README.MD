@@ -47,14 +47,19 @@ Explore With Me — это масштабируемая система для у
 ### Микросервисы
 
 🎯 Event Service (event-service) — управление событиями
+[DataBase Diagram](assets/readme/schemas/event-service-schema.svg)
 
 👫 User Service (user-service) — управление пользователями
+[DataBase Diagram](assets/readme/schemas/user-service-schema.svg)
 
 🙋 Request Service (request-service) — управление заявками на участие
+[DataBase Diagram](assets/readme/schemas/request-service-schema.svg)
 
 ✏️ Comment service (comment-service) — добавление и модерация комментариев
+[DataBase Diagram](assets/readme/schemas/comment-service-schema.svg)
 
 📊 Stats Server (stats-server) — сбор и анализ статистики обращений
+[DataBase Diagram](assets/readme/schemas/stats-service-schema.svg)
 
 ### Инфраструктурные сервисы
 
