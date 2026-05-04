@@ -37,8 +37,8 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     @Override
     @Transactional
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
-        UserShortDto user = getUserByIdOrThrow(userId);
-        EventFullDto event = getEventByIdOrThrow(eventId);
+        UserShortDto user = userFeign.getUserShortById(userId);
+        EventFullDto event = eventFeign.getEventFullDtoById(eventId);
 
         if (requestRepository.existsByEventIdAndRequesterId(eventId, userId)) {
             throw new ConflictException("Request already exists");
@@ -81,7 +81,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
-        getUserByIdOrThrow(userId);
+        userFeign.getUserShortById(userId);
         return ParticipationRequestMapper.toDtoList(
                 requestRepository.findAllByRequesterIdOrderByCreatedDesc(userId));
     }
@@ -89,7 +89,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     @Override
     @Transactional
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
-        getUserByIdOrThrow(userId);
+        userFeign.getUserShortById(userId);
         ParticipationRequest request = getRequestByIdOrThrow(requestId);
 
         if (!request.getRequesterId().equals(userId)) {
@@ -103,8 +103,8 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
     @Override
     public List<ParticipationRequestDto> getEventRequestsByInitiator(Long userId, Long eventId) {
-        getUserByIdOrThrow(userId);
-        EventFullDto event = getEventByIdOrThrow(eventId);
+        userFeign.getUserShortById(userId);
+        EventFullDto event = eventFeign.getEventFullDtoById(eventId);
 
         if (!event.initiator().id().equals(userId)) {
             throw new ForbiddenAccessException(
@@ -119,8 +119,8 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     @Transactional
     public EventRequestStatusUpdateResult updateEventRequestsStatus(
             Long userId, Long eventId, EventRequestStatusUpdateRequest updateRequest) {
-        getUserByIdOrThrow(userId);
-        EventFullDto event = getEventByIdOrThrow(eventId);
+        userFeign.getUserShortById(userId);
+        EventFullDto event = eventFeign.getEventFullDtoById(eventId);
 
         if (!event.initiator().id().equals(userId)) {
             throw new ForbiddenAccessException(
@@ -218,14 +218,6 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
     private static Set<Long> idsOf(Collection<ParticipationRequest> requests) {
         return requests.stream().map(ParticipationRequest::getId).collect(Collectors.toSet());
-    }
-
-    private UserShortDto getUserByIdOrThrow(Long userId) {
-        return userFeign.getUserShortById(userId);
-    }
-
-    private EventFullDto getEventByIdOrThrow(Long eventId) {
-        return eventFeign.getEventFullDtoById(eventId);
     }
 
     private ParticipationRequest getRequestByIdOrThrow(Long requestId) {

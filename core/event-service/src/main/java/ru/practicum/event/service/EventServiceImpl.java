@@ -68,7 +68,7 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, Long> commentariesCount = getCommentariesCount(Set.of(event));
 
-        UserShortDto userShortDto = getUserShortByIdOrThrow(event.getInitiatorId());
+        UserShortDto userShortDto = userFeign.getUserShortById(event.getInitiatorId());
 
         return EventMapper.mapToFullDto(
                 event,
@@ -89,7 +89,7 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, Long> commentariesCount = getCommentariesCount(Set.of(event));
 
-        UserShortDto userShortDto = getUserShortByIdOrThrow(event.getInitiatorId());
+        UserShortDto userShortDto = userFeign.getUserShortById(event.getInitiatorId());
 
         return EventMapper.mapToFullDto(
                 event,
@@ -129,7 +129,7 @@ public class EventServiceImpl implements EventService {
                                                 confirmedRequests.getOrDefault(event.getId(), 0L),
                                                 statsForEvents.get(event.getId()),
                                                 commentariesCount.getOrDefault(event.getId(), 0L),
-                                                getUserShortByIdOrThrow(event.getInitiatorId())))
+                                                userFeign.getUserShortById(event.getInitiatorId())))
                         .toList();
 
         if (EventSortBy.VIEWS.equals(getRequest.sort())) {
@@ -158,13 +158,13 @@ public class EventServiceImpl implements EventService {
                                         confirmedRequests.getOrDefault(event.getId(), 0L),
                                         statsForEvents.get(event.getId()),
                                         null,
-                                        getUserShortByIdOrThrow(event.getInitiatorId())))
+                                        userFeign.getUserShortById(event.getInitiatorId())))
                 .toList();
     }
 
     @Override
     public Collection<EventShortDto> getEvents(EventsPrivateGetRequest getRequest) {
-        UserShortDto userShortDto = getUserShortByIdOrThrow(getRequest.userId());
+        UserShortDto userShortDto = userFeign.getUserShortById(getRequest.userId());
         Page<Event> events =
                 eventRepository.findByInitiatorId(getRequest.userId(), getRequest.getPageable());
 
@@ -190,7 +190,7 @@ public class EventServiceImpl implements EventService {
     public EventFullDto createEvent(Long userId, NewEventDto newEventDto) {
         Location location = LocationMapper.mapToEntity(newEventDto.location());
         Category category = getCategoryByIdOrThrow(newEventDto.category());
-        UserShortDto initiator = getUserShortByIdOrThrow(userId);
+        UserShortDto initiator = userFeign.getUserShortById(userId);
         Event event = EventMapper.mapToEntity(newEventDto, category, initiator.id(), location);
 
         LocalDateTime now = LocalDateTime.now();
@@ -202,12 +202,12 @@ public class EventServiceImpl implements EventService {
         Event saved = eventRepository.save(event);
 
         return EventMapper.mapToFullDto(
-                saved, 0, 0L, 0L, getUserShortByIdOrThrow(event.getInitiatorId()));
+                saved, 0, 0L, 0L, userFeign.getUserShortById(event.getInitiatorId()));
     }
 
     @Override
     public EventFullDto getByUserById(Long userId, Long eventId) {
-        UserShortDto user = getUserShortByIdOrThrow(userId);
+        UserShortDto user = userFeign.getUserShortById(userId);
 
         Event event = getEventByIdOrThrow(eventId);
 
@@ -255,7 +255,7 @@ public class EventServiceImpl implements EventService {
                 confirmedRequests.getOrDefault(event.getId(), 0L),
                 null,
                 null,
-                getUserShortByIdOrThrow(event.getInitiatorId()));
+                userFeign.getUserShortById(event.getInitiatorId()));
     }
 
     @Override
@@ -263,7 +263,7 @@ public class EventServiceImpl implements EventService {
     public EventFullDto updateEventByUser(
             Long userId, Long eventId, UpdateEventUserRequest updateRequest) {
         Event event = getEventByIdOrThrow(eventId);
-        UserShortDto user = getUserShortByIdOrThrow(userId);
+        UserShortDto user = userFeign.getUserShortById(userId);
 
         if (!event.getInitiatorId().equals(user.id())) {
             throw new ForbiddenAccessException("You can't update event that's not yours");
@@ -371,12 +371,6 @@ public class EventServiceImpl implements EventService {
         Optional<Event> eventOptional = eventRepository.findById(eventId);
         return eventOptional.orElseThrow(
                 NotFoundException.supplier("Event with id=%d not found", eventId));
-    }
-
-    private UserShortDto getUserShortByIdOrThrow(Long userId) {
-        Optional<UserShortDto> optionalUser = Optional.of(userFeign.getUserShortById(userId));
-        return optionalUser.orElseThrow(
-                NotFoundException.supplier("User with id=%d not found", userId));
     }
 
     private Category getCategoryByIdOrThrow(Long categoryId) {

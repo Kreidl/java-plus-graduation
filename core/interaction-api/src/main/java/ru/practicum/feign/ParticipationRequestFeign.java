@@ -6,7 +6,8 @@ import java.util.Map;
 import ru.practicum.feign.fallback.ParticipationRequestFeignFallback;
 
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import feign.FeignException;
 
@@ -15,6 +16,7 @@ import feign.FeignException;
         path = "/api/v1/request",
         fallback = ParticipationRequestFeignFallback.class)
 public interface ParticipationRequestFeign {
-    @GetMapping("/confirmed")
-    Map<Long, Long> countConfirmedByEventIds(Collection<Long> eventIds) throws FeignException;
+    @PostMapping("/confirmed")
+    Map<Long, Long> countConfirmedByEventIds(@RequestBody Collection<Long> eventIds)
+            throws FeignException;
 }

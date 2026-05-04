@@ -12,9 +12,7 @@ import ru.practicum.feign.fallback.CommentFeignFallback;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import feign.FeignException;
 
@@ -25,13 +23,13 @@ import feign.FeignException;
         fallback = CommentFeignFallback.class)
 public interface CommentFeign {
     @GetMapping("/users/{userId}/comments")
-    public Collection<CommentDto> getAllCommentsPaged(
+    Collection<CommentDto> getAllCommentsPaged(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") @PositiveOrZero int from,
             @RequestParam(defaultValue = "10") @Positive int size)
             throws FeignException;
 
-    @GetMapping("/events/comments/count")
-    public List<EventCommentCount> countCommentsByEventIds(List<Long> eventIds)
+    @PostMapping("/events/comments/count")
+    List<EventCommentCount> countCommentsByEventIds(@RequestBody List<Long> eventIds)
             throws FeignException;
 }

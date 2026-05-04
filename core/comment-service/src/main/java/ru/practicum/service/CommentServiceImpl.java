@@ -49,7 +49,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public Collection<CommentDto> getAllCommentsOfUserPaged(CommentsPrivateGetRequest request) {
-        UserShortDto user = getUserByIdOrThrow(request.userId());
+        UserShortDto user = userFeign.getUserShortById(request.userId());
 
         List<Comment> comments =
                 commentRepository.findAllByAuthorId(request.userId(), request.getPageable());
@@ -66,7 +66,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public void deleteCommentByUser(long userId, long commentId) {
-        UserShortDto user = getUserByIdOrThrow(userId);
+        UserShortDto user = userFeign.getUserShortById(userId);
         Comment comment = getCommentByIdOrThrow(commentId);
         if (!comment.getAuthorId().equals(user.id())) {
             throw new ForbiddenAccessException("You are not allowed to delete others comments");
@@ -76,8 +76,8 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentDto createComment(CommentsCreateRequest request) {
-        EventFullDto event = getEventByIdOrThrow(request.newComment().eventId());
-        UserShortDto user = getUserByIdOrThrow(request.userId());
+        EventFullDto event = eventFeign.getEventFullDtoById(request.newComment().eventId());
+        UserShortDto user = userFeign.getUserShortById(request.userId());
 
         Comment newComment = CommentMapper.toEntity(request.newComment(), user.id(), event.id());
         Comment saved = commentRepository.save(newComment);
@@ -86,7 +86,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentDto updateComment(CommentsUpdateRequest request) {
-        UserShortDto user = getUserByIdOrThrow(request.userId());
+        UserShortDto user = userFeign.getUserShortById(request.userId());
         Comment comment = getCommentByIdOrThrow(request.commentId());
         if (!comment.getAuthorId().equals(user.id())) {
             throw new ForbiddenAccessException("You are not allowed to update others comments");
@@ -109,18 +109,6 @@ public class CommentServiceImpl implements CommentService {
     @Transactional(readOnly = true)
     public List<EventCommentCount> countCommentsByEventIds(List<Long> eventIds) {
         return commentRepository.countCommentsByEventIds(eventIds);
-    }
-
-    private EventFullDto getEventByIdOrThrow(Long eventId) {
-        Optional<EventFullDto> eventOptional = Optional.of(eventFeign.getEventFullDtoById(eventId));
-        return eventOptional.orElseThrow(
-                NotFoundException.supplier("Event with id=%d not found", eventId));
-    }
-
-    private UserShortDto getUserByIdOrThrow(Long userId) {
-        Optional<UserShortDto> optionalUser = Optional.of(userFeign.getUserShortById(userId));
-        return optionalUser.orElseThrow(
-                NotFoundException.supplier("User with id=%d not found", userId));
     }
 
     private Comment getCommentByIdOrThrow(Long commentId) {
