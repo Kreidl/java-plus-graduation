@@ -1,6 +1,17 @@
 server:
   port: 8080
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gatewayroutes
+  endpoint:
+    gatewayroutes:
+      enabled: true
+    health:
+      show-details: always
+
 spring:
   output:
     ansi:
