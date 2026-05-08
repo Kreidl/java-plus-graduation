@@ -16,3 +16,8 @@ spring:
   output:
     ansi:
       enabled: always
+  cloud:
+    openfeign:
+      enabled: true
+      okhttp:
+        enabled: true

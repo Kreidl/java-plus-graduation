@@ -31,19 +31,16 @@ public class EventMapper {
                 null,
                 newEventDto.requestModeration(),
                 EventState.PENDING,
-                newEventDto.title());
+                newEventDto.title(),
+                0L);
     }
 
     public EventFullDto mapToFullDto(
-            Event event,
-            long confirmedRequests,
-            Long views,
-            Long commentaries,
-            UserShortDto userShortDto) {
+            Event event, Long views, Long commentaries, UserShortDto userShortDto) {
         return new EventFullDto(
                 event.getAnnotation(),
                 CategoryMapper.mapToDto(event.getCategory()),
-                confirmedRequests,
+                event.getConfirmedRequests(),
                 event.getCreatedOn(),
                 event.getDescription(),
                 event.getEventDate(),
@@ -61,21 +58,36 @@ public class EventMapper {
     }
 
     public EventShortDto mapToShortDto(
-            Event event,
-            long confirmedRequests,
-            Long views,
-            Long commentaries,
-            UserShortDto userShortDto) {
+            Event event, Long views, Long commentaries, UserShortDto userShortDto) {
         return new EventShortDto(
                 event.getAnnotation(),
                 CategoryMapper.mapToDto(event.getCategory()),
-                confirmedRequests,
+                event.getConfirmedRequests(),
                 event.getEventDate(),
                 event.getId(),
                 userShortDto,
                 event.getPaid(),
                 event.getTitle(),
                 views,
+                commentaries);
+    }
+
+    public EventCheckDto mapToCheckDto(Event event, Long commentaries, UserShortDto userShortDto) {
+        return new EventCheckDto(
+                event.getAnnotation(),
+                CategoryMapper.mapToDto(event.getCategory()),
+                event.getCreatedOn(),
+                event.getDescription(),
+                event.getEventDate(),
+                event.getId(),
+                userShortDto,
+                LocationMapper.mapToDto(event.getLocation()),
+                event.getPaid(),
+                event.getParticipantLimit(),
+                event.getPublishedOn(),
+                event.getRequestModeration(),
+                event.getState(),
+                event.getTitle(),
                 commentaries);
     }
 

@@ -25,7 +25,6 @@ import ru.practicum.exception.IllegalEventUpdateException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.ValidationException;
 import ru.practicum.feign.CommentFeign;
-import ru.practicum.feign.ParticipationRequestFeign;
 import ru.practicum.feign.UserFeign;
 import ru.practicum.user.dto.UserShortDto;
 
@@ -48,7 +47,6 @@ public class EventServiceImpl implements EventService {
     private final UserFeign userFeign;
     private final CategoryRepository categoryRepository;
     private final StatsClient statsClient;
-    private final ParticipationRequestFeign participationRequestFeign;
     private final CommentFeign commentFeign;
 
     @Override
@@ -64,39 +62,31 @@ public class EventServiceImpl implements EventService {
 
         ViewStatsDto statsDto = getStatsForEvent(event, uri);
 
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(Set.of(event));
-
         Map<Long, Long> commentariesCount = getCommentariesCount(Set.of(event));
 
         UserShortDto userShortDto = userFeign.getUserShortById(event.getInitiatorId());
 
         return EventMapper.mapToFullDto(
                 event,
-                confirmedRequests.getOrDefault(event.getId(), 0L),
                 statsDto.hits(),
                 commentariesCount.getOrDefault(event.getId(), 0L),
                 userShortDto);
     }
 
     @Override
-    public EventFullDto getEventFullDtoById(Long eventId) {
+    public EventCheckDto getEventCheckDtoById(Long eventId) {
         Optional<Event> eventOptional =
                 eventRepository.findByIdAndState(eventId, EventState.PUBLISHED);
         Event event =
                 eventOptional.orElseThrow(
                         NotFoundException.supplier("Event with id=%d not found", eventId));
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(Set.of(event));
 
         Map<Long, Long> commentariesCount = getCommentariesCount(Set.of(event));
 
         UserShortDto userShortDto = userFeign.getUserShortById(event.getInitiatorId());
 
-        return EventMapper.mapToFullDto(
-                event,
-                confirmedRequests.getOrDefault(event.getId(), 0L),
-                null,
-                commentariesCount.getOrDefault(event.getId(), 0L),
-                userShortDto);
+        return EventMapper.mapToCheckDto(
+                event, commentariesCount.getOrDefault(event.getId(), 0L), userShortDto);
     }
 
     @Override
@@ -116,8 +106,6 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, Long> statsForEvents = getStatsMapForEvents(events);
 
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(eventsSet);
-
         Map<Long, Long> commentariesCount = getCommentariesCount(eventsSet);
 
         List<EventShortDto> eventsList =
@@ -126,7 +114,6 @@ public class EventServiceImpl implements EventService {
                                 event ->
                                         EventMapper.mapToShortDto(
                                                 event,
-                                                confirmedRequests.getOrDefault(event.getId(), 0L),
                                                 statsForEvents.get(event.getId()),
                                                 commentariesCount.getOrDefault(event.getId(), 0L),
                                                 userFeign.getUserShortById(event.getInitiatorId())))
@@ -147,15 +134,11 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, Long> statsForEvents = getStatsMapForEvents(events);
 
-        Map<Long, Long> confirmedRequests =
-                getConfirmedRequests(events.stream().collect(Collectors.toSet()));
-
         return events.stream()
                 .map(
                         event ->
                                 EventMapper.mapToFullDto(
                                         event,
-                                        confirmedRequests.getOrDefault(event.getId(), 0L),
                                         statsForEvents.get(event.getId()),
                                         null,
                                         userFeign.getUserShortById(event.getInitiatorId())))
@@ -170,15 +153,11 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, Long> statsForEvents = getStatsMapForEvents(events);
 
-        Map<Long, Long> confirmedRequests =
-                getConfirmedRequests(events.stream().collect(Collectors.toSet()));
-
         return events.stream()
                 .map(
                         event ->
                                 EventMapper.mapToShortDto(
                                         event,
-                                        confirmedRequests.getOrDefault(event.getId(), 0L),
                                         statsForEvents.get(event.getId()),
                                         null,
                                         userShortDto))
@@ -202,7 +181,7 @@ public class EventServiceImpl implements EventService {
         Event saved = eventRepository.save(event);
 
         return EventMapper.mapToFullDto(
-                saved, 0, 0L, 0L, userFeign.getUserShortById(event.getInitiatorId()));
+                saved, 0L, 0L, userFeign.getUserShortById(event.getInitiatorId()));
     }
 
     @Override
@@ -217,14 +196,7 @@ public class EventServiceImpl implements EventService {
 
         ViewStatsDto statsDto = getStatsForEvent(event, EVENTS_URI.formatted(eventId));
 
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(Set.of(event));
-
-        return EventMapper.mapToFullDto(
-                event,
-                confirmedRequests.getOrDefault(event.getId(), 0L),
-                statsDto.hits(),
-                null,
-                user);
+        return EventMapper.mapToFullDto(event, statsDto.hits(), null, user);
     }
 
     @Override
@@ -248,14 +220,8 @@ public class EventServiceImpl implements EventService {
 
         Event saved = eventRepository.save(event);
 
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(Set.of(event));
-
         return EventMapper.mapToFullDto(
-                saved,
-                confirmedRequests.getOrDefault(event.getId(), 0L),
-                null,
-                null,
-                userFeign.getUserShortById(event.getInitiatorId()));
+                saved, null, null, userFeign.getUserShortById(event.getInitiatorId()));
     }
 
     @Override
@@ -285,10 +251,15 @@ public class EventServiceImpl implements EventService {
 
         Event saved = eventRepository.save(event);
 
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(Set.of(event));
+        return EventMapper.mapToFullDto(saved, null, null, user);
+    }
 
-        return EventMapper.mapToFullDto(
-                saved, confirmedRequests.getOrDefault(event.getId(), 0L), null, null, user);
+    @Override
+    @Transactional
+    public void updateConfirmedRequests(Long eventId, Long confirmedRequests) {
+        Event event = getEventByIdOrThrow(eventId);
+        event.setConfirmedRequests(confirmedRequests);
+        eventRepository.save(event);
     }
 
     private Map<Long, Long> getCommentariesCount(Set<Event> events) {
@@ -325,16 +296,6 @@ public class EventServiceImpl implements EventService {
                                                                 statsDto.uri().lastIndexOf('/')
                                                                         + 1)),
                                 ViewStatsDto::hits));
-    }
-
-    private Map<Long, Long> getConfirmedRequests(Set<Event> events) {
-        if (events.isEmpty()) {
-            return Map.of();
-        }
-
-        List<Long> eventIds = events.stream().map(Event::getId).toList();
-
-        return participationRequestFeign.countConfirmedByEventIds(eventIds);
     }
 
     private List<ViewStatsDto> getStatsForEvents(List<String> uris, LocalDateTime startDate) {

@@ -1,9 +1,7 @@
 package ru.practicum.repository;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.*;
 
 import ru.practicum.model.ParticipationRequest;
 import ru.practicum.request.dto.ConfirmedRequestsCount;
@@ -43,10 +41,21 @@ public interface ParticipationRequestRepository extends JpaRepository<Participat
             return Map.of();
         }
 
-        return countByEventIdsAndStatusRaw(eventIds, EventRequestStatus.CONFIRMED).stream()
+        Set<Long> validEventIds =
+                eventIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+
+        if (validEventIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return countByEventIdsAndStatusRaw(validEventIds, EventRequestStatus.CONFIRMED).stream()
+                .filter(r -> r.getEventId() != null) // ✅ Фильтруем null в результате
+                .filter(r -> r.getCnt() != null) // ✅ На всякий случай
                 .collect(
                         Collectors.toMap(
                                 ConfirmedRequestsCount::getEventId,
-                                ConfirmedRequestsCount::getCnt));
+                                ConfirmedRequestsCount::getCnt,
+                                (v1, v2) -> v1 + v2 // ✅ merge function на случай дубликатов ключей
+                                ));
     }
 }

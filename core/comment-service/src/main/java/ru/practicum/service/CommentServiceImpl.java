@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 import ru.practicum.comment.dto.*;
-import ru.practicum.event.dto.EventFullDto;
+import ru.practicum.event.dto.EventCheckDto;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.ForbiddenAccessException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.feign.EventFeign;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,7 +78,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentDto createComment(CommentsCreateRequest request) {
-        EventFullDto event = eventFeign.getEventFullDtoById(request.newComment().eventId());
+        EventCheckDto event = getEventOrThrowConflict(request.newComment().eventId());
         UserShortDto user = userFeign.getUserShortById(request.userId());
 
         Comment newComment = CommentMapper.toEntity(request.newComment(), user.id(), event.id());
@@ -115,5 +117,14 @@ public class CommentServiceImpl implements CommentService {
         Optional<Comment> optionalComment = commentRepository.findById(commentId);
         return optionalComment.orElseThrow(
                 NotFoundException.supplier("Comment with id=%d not found", commentId));
+    }
+
+    private EventCheckDto getEventOrThrowConflict(Long eventId) {
+        try {
+            return eventFeign.getEventCheckDtoById(eventId);
+        } catch (FeignException.NotFound e) {
+            log.debug("Event {} not found via Feign, converting to ConflictException", eventId);
+            throw new ConflictException("Event with id=" + eventId + " not found or not published");
+        }
     }
 }

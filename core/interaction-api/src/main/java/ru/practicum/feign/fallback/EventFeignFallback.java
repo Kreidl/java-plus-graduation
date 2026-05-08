@@ -1,6 +1,6 @@
 package ru.practicum.feign.fallback;
 
-import ru.practicum.event.dto.EventFullDto;
+import ru.practicum.event.dto.EventCheckDto;
 import ru.practicum.feign.EventFeign;
 
 import org.springframework.stereotype.Component;
@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class EventFeignFallback implements EventFeign {
     @Override
-    public EventFullDto getEventFullDtoById(Long eventId) throws FeignException {
+    public EventCheckDto getEventCheckDtoById(Long eventId) throws FeignException {
         fallback();
         return null;
     }
@@ -21,6 +21,12 @@ public class EventFeignFallback implements EventFeign {
     public Boolean existsById(Long eventId) throws FeignException {
         fallback();
         return null;
+    }
+
+    @Override
+    public void updateConfirmedRequests(Long eventId, Long confirmedRequests)
+            throws FeignException {
+        fallback();
     }
 
     private void fallback() {

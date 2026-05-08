@@ -1,17 +1,6 @@
 server:
   port: 8080
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,gatewayroutes
-  endpoint:
-    gatewayroutes:
-      enabled: true
-    health:
-      show-details: always
-
 spring:
   output:
     ansi:
@@ -31,37 +20,27 @@ spring:
       routes:
         - id: event-service
           uri: lb://event-service
+          order: 2
           predicates:
-            - Path=/admin/events/**
-            - Path=/users/*/events/**
-            - Path=/events/**
-            - Path=/admin/categories
-            - Path=/admin/categories/**
-            - Path=/categories/**
-            - Path=/admin/compilations/**
-            - Path=/compilations/**
+            - Path=/admin/categories,/admin/categories/**,/categories/**,/categories,/admin/events/**,/admin/events,/users/*/events,/users/*/events/**,/events,/events/**,/admin/compilations,/admin/compilations/**,/compilations,/compilations/**
 
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/admin/users/**
+            - Path=/admin/users,/admin/users/**
 
         - id: request-service
           uri: lb://request-service
+          order: 1
           predicates:
-            - Path=/users/*/requests
-            - Path=/users/*/requests/**
-            - Path=/users/*/events/*/requests
+            - Path=/users/*/requests,/users/*/requests/**,/users/*/events/*/requests
 
         - id: comment-service
           uri: lb://comment-service
           predicates:
-            - Path=/admin/comments/**
-            - Path=/users/*/comments/**
-            - Path=/users/*/comments
-            - Path=/comments/**
+            - Path=/admin/comments/**,/users/*/comments,/users/*/comments/**,/comments/**
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway: TRACE
     org.springframework.cloud.gateway.handler.predicate: DEBUG

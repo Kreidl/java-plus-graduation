@@ -23,7 +23,9 @@ public interface EventService {
 
     EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest updateRequest);
 
-    EventFullDto getEventFullDtoById(Long eventId);
+    EventCheckDto getEventCheckDtoById(Long eventId);
 
     Boolean existsById(Long eventId);
+
+    void updateConfirmedRequests(Long eventId, Long confirmedRequests);
 }

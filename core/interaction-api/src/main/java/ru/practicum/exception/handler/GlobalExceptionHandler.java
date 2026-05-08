@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -178,6 +179,18 @@ public class GlobalExceptionHandler {
                 e.getMessage(),
                 "Server exception",
                 HttpStatus.GATEWAY_TIMEOUT.toString(),
+                LocalDateTime.now());
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(FeignException.NotFound.class)
+    public ApiError handleFeignExceptionNotFoundException(FeignException.NotFound e) {
+        log.warn(e.getMessage(), e);
+        return new ApiError(
+                null,
+                e.getMessage(),
+                "Object not found",
+                HttpStatus.NOT_FOUND.toString(),
                 LocalDateTime.now());
     }
 }

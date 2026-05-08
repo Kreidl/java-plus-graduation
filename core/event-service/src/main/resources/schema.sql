@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS event
 
     category_id        BIGINT        NOT NULL,
     initiator_id       BIGINT        NOT NULL,
+    confirmed_requests BIGINT        NOT NULL,
 
     CONSTRAINT fk_event_category FOREIGN KEY (category_id) REFERENCES category (id)
 );

@@ -98,6 +98,11 @@
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-okhttp</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

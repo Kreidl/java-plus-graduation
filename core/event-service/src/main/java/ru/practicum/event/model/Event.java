@@ -62,4 +62,7 @@ public class Event {
 
     @Column(nullable = false, length = 120)
     String title;
+
+    @Column(name = "confirmed_requests", nullable = false)
+    Long confirmedRequests;
 }

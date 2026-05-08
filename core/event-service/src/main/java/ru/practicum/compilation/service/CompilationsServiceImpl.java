@@ -2,7 +2,6 @@ package ru.practicum.compilation.service;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,7 +18,6 @@ import ru.practicum.event.model.Event;
 import ru.practicum.event.repository.EventRepository;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
-import ru.practicum.feign.ParticipationRequestFeign;
 import ru.practicum.feign.UserFeign;
 
 import org.springframework.data.domain.Page;
@@ -36,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 public class CompilationsServiceImpl implements CompilationsService {
     private final CompilationsRepository compRepository;
     private final EventRepository eventRepository;
-    private final ParticipationRequestFeign participationRequestFeign;
     private final UserFeign userFeign;
 
     @Override
@@ -48,9 +45,7 @@ public class CompilationsServiceImpl implements CompilationsService {
         Set<Event> events =
                 page.stream().flatMap(c -> c.getEvents().stream()).collect(Collectors.toSet());
 
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(events);
-
-        return page.stream().map(c -> toDto(c, confirmedRequests)).toList();
+        return page.stream().map(this::toDto).toList();
     }
 
     @Override
@@ -63,11 +58,7 @@ public class CompilationsServiceImpl implements CompilationsService {
                                 NotFoundException.supplier(
                                         "Compilation with id=%d was not found", compId));
 
-        Set<Event> events = compilation.getEvents();
-
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(events);
-
-        return toDto(compilation, confirmedRequests);
+        return toDto(compilation);
     }
 
     @Override
@@ -85,9 +76,7 @@ public class CompilationsServiceImpl implements CompilationsService {
 
         Compilation saved = compRepository.save(compilation);
 
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(events);
-
-        return toDto(saved, confirmedRequests);
+        return toDto(saved);
     }
 
     @Override
@@ -120,21 +109,16 @@ public class CompilationsServiceImpl implements CompilationsService {
 
         Compilation updated = compRepository.save(compilation);
 
-        Set<Event> actualEvents = updated.getEvents();
-
-        Map<Long, Long> confirmedRequests = getConfirmedRequests(actualEvents);
-
-        return toDto(updated, confirmedRequests);
+        return toDto(updated);
     }
 
-    private CompilationDto toDto(Compilation compilation, Map<Long, Long> confirmedRequests) {
+    private CompilationDto toDto(Compilation compilation) {
         List<EventShortDto> events =
                 compilation.getEvents().stream()
                         .map(
                                 event ->
                                         EventMapper.mapToShortDto(
                                                 event,
-                                                confirmedRequests.getOrDefault(event.getId(), 0L),
                                                 null,
                                                 null,
                                                 userFeign.getUserShortById(event.getInitiatorId())))
@@ -155,15 +139,5 @@ public class CompilationsServiceImpl implements CompilationsService {
         }
 
         return events;
-    }
-
-    private Map<Long, Long> getConfirmedRequests(Set<Event> events) {
-        if (events.isEmpty()) {
-            return Map.of();
-        }
-
-        List<Long> eventIds = events.stream().map(Event::getId).toList();
-
-        return participationRequestFeign.countConfirmedByEventIds(eventIds);
     }
 }
