@@ -1,0 +1,41 @@
+server:
+  port: 0
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:13004/comment
+    username: comment_user
+    password: secret
+  sql:
+    init:
+      mode: always
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  output:
+    ansi:
+      enabled: always
+  cloud:
+    openfeign:
+      enabled: true
+      okhttp:
+        enabled: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        slidingWindowType: COUNT_BASED
+    instances:
+      event-service:
+        slidingWindowSize: 10
+        waitDurationInOpenState: 10000 # 10 секунд в миллисекундах
+        permittedNumberOfCallsInHalfOpenState: 5
+      user-service:
+        slidingWindowSize: 30
+        waitDurationInOpenState: 5000 # 5 секунд в миллисекундах
+        permittedNumberOfCallsInHalfOpenState: 3

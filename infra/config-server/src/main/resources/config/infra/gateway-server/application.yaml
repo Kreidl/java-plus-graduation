@@ -7,15 +7,40 @@ spring:
       enabled: always
   cloud:
     gateway:
-      discovery.locator.enabled: true
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
       default-filters:
         - name: Retry
           args:
             retries: 3
             series: SERVER_ERROR # Повторять при 5xx ошибках
-            methods: GET, POST, PUT
+            methods: GET,POST,PUT,DELETE,PATCH
       routes:
-        - id: main-service
-          uri: lb://main-service
+        - id: event-service
+          uri: lb://event-service
+          order: 2
           predicates:
-            - Path=/**
+            - Path=/admin/categories,/admin/categories/**,/categories/**,/categories,/admin/events/**,/admin/events,/users/*/events,/users/*/events/**,/events,/events/**,/admin/compilations,/admin/compilations/**,/compilations,/compilations/**
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/admin/users,/admin/users/**
+
+        - id: request-service
+          uri: lb://request-service
+          order: 1
+          predicates:
+            - Path=/users/*/requests,/users/*/requests/**,/users/*/events/*/requests
+
+        - id: comment-service
+          uri: lb://comment-service
+          predicates:
+            - Path=/admin/comments/**,/users/*/comments,/users/*/comments/**,/comments/**
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.cloud.gateway.handler.predicate: DEBUG

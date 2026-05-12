@@ -1,0 +1,48 @@
+server:
+  port: 0
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:13001/event
+    username: event_user
+    password: secret
+  sql:
+    init:
+      mode: always
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  output:
+    ansi:
+      enabled: always
+  cloud:
+    openfeign:
+      enabled: true
+      okhttp:
+        enabled: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        slidingWindowType: COUNT_BASED
+    instances:
+      comment-service:
+        slidingWindowSize: 8
+        waitDurationInOpenState: 10000 # 10 секунд в миллисекундах
+        permittedNumberOfCallsInHalfOpenState: 5
+      request-service:
+        slidingWindowSize: 10
+        waitDurationInOpenState: 10000 # 10 секунд в миллисекундах
+        permittedNumberOfCallsInHalfOpenState: 5
+      user-service:
+        slidingWindowSize: 50
+        waitDurationInOpenState: 8000 # 8 секунд в миллисекундах
+        permittedNumberOfCallsInHalfOpenState: 5
+
+stats-server:
+  id: stats-server
