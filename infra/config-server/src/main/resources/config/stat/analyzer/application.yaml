@@ -1,0 +1,49 @@
+grpc:
+  client:
+    hub-router:
+      address: static://localhost:59090
+      enable-keep-alive: true
+      keep-alive-without-calls: true
+      negotiation-type: plaintext
+
+analyzer:
+  kafka:
+    event-similarity-consumer-properties:
+      bootstrap.servers: localhost:9092
+      group.id: analyzer-snapshot
+      key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
+      value.deserializer: ru.practicum.kafka.deserializer.EventSimilarityDeserializer
+    user-action-consumer-properties:
+      bootstrap.servers: localhost:9092
+      group.id: snapshot-processor
+      key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
+      value.deserializer: ru.practicum.kafka.deserializer.UserActionDeserializer
+    topics:
+      user-actions: stats.user-actions.v1
+      events-similarity: stats.events-similarity.v1
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/analyzer
+    username: analyzer
+    password: "12345"
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  sql:
+    init:
+      mode: always
+  output:
+    ansi:
+      enabled: always
+
+logging:
+  level:
+    ru.practicum: INFO
+    org.springframework.web: ERROR
+    org.apache.kafka: ERROR
+    org.apache.http: ERROR
