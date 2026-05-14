@@ -22,7 +22,7 @@ public class UserActionHandlerImpl implements UserActionHandler {
 
     public UserActionHandlerImpl(KafkaProducerConfig kafkaProducerConfig) {
         this.kafkaProducerConfig = kafkaProducerConfig;
-        kafkaProducer = kafkaProducerConfig.createKafkaHubProducer();
+        kafkaProducer = kafkaProducerConfig.createKafkaUserActionProducer();
     }
 
     @Override

@@ -1,5 +1,7 @@
 package ru.practicum;
 
+import ru.practicum.service.AggregatorStarter;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -15,7 +17,7 @@ public class AggregatorApp {
         ConfigurableApplicationContext context = SpringApplication.run(AggregatorApp.class, args);
 
         // Получаем бин AggregationStarter из контекста и запускаем основную логику сервиса
-        // AggregationStarter aggregator = context.getBean(AggregationStarter.class);
-        // aggregator.start();
+        AggregatorStarter aggregator = context.getBean(AggregatorStarter.class);
+        aggregator.start();
     }
 }

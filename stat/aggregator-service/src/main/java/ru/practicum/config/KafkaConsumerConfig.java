@@ -5,7 +5,7 @@ import java.util.Properties;
 
 import ru.practicum.ewm.stats.avro.UserActionAvro;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,14 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 @Setter
 @ToString
 @Configuration
-@ConfigurationProperties("collector.kafka")
-public class KafkaProducerConfig {
+@ConfigurationProperties("aggregator.kafka")
+public class KafkaConsumerConfig {
     private Map<String, String> topics;
-    private Map<String, String> userActionProducerProperties;
+    private Map<String, String> userActionConsumerProperties;
 
-    public Properties getUserActionProducerProperties() {
+    public Properties getUserActionConsumerProperties() {
         Properties props = new Properties();
-        props.putAll(userActionProducerProperties);
+        props.putAll(userActionConsumerProperties);
         return props;
     }
 
@@ -32,7 +32,7 @@ public class KafkaProducerConfig {
         return topics != null ? topics.get("user-actions") : "stats.user-actions.v1";
     }
 
-    public KafkaProducer<Long, UserActionAvro> createKafkaUserActionProducer() {
-        return new KafkaProducer<>(getUserActionProducerProperties());
+    public KafkaConsumer<Long, UserActionAvro> createKafkaUserActionConsumer() {
+        return new KafkaConsumer<>(getUserActionConsumerProperties());
     }
 }
