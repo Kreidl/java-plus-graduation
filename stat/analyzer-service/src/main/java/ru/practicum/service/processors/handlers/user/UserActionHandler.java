@@ -24,12 +24,26 @@ public class UserActionHandler {
     private final Double LIKE_RATE = 1.0;
 
     public void handle(UserActionAvro userActionAvro) {
-        Optional<UserAction> userActionOpt =
-                userActionRepository.findByUserIdAndEventId(
-                        userActionAvro.getUserId(), userActionAvro.getEventId());
+        log.debug("Processing UserActionAvro: userId={}, eventId={}, actionType={}",
+                userActionAvro.getUserId(),
+                userActionAvro.getEventId(),
+                userActionAvro.getActionType());
+
+        Optional<UserAction> userActionOpt = userActionRepository.findByUserIdAndEventId(
+                userActionAvro.getUserId(), userActionAvro.getEventId());
+
         if (userActionOpt.isEmpty()) {
+            log.info("Creating new user action record: userId={}, eventId={}, actionType={}",
+                    userActionAvro.getUserId(),
+                    userActionAvro.getEventId(),
+                    userActionAvro.getActionType());
             createUserAction(userActionAvro);
         } else {
+            log.debug("Updating existing user action: userId={}, eventId={}, oldActionType={}, newActionType={}",
+                    userActionAvro.getUserId(),
+                    userActionAvro.getEventId(),
+                    userActionOpt.get().getActionType(),
+                    userActionAvro.getActionType());
             updateUserAction(userActionOpt.get(), userActionAvro);
         }
     }
@@ -40,17 +54,39 @@ public class UserActionHandler {
         userAction.setEventId(userActionAvro.getEventId());
         userAction.setActionType(convertActionTypeAvroToActionType(userActionAvro.getActionType()));
         userAction.setTimestamp(userActionAvro.getTimestamp());
-        userActionRepository.save(userAction);
+
+        UserAction saved = userActionRepository.save(userAction);
+        log.info("User action created successfully: id={}, userId={}, eventId={}, actionType={}",
+                saved.getId(),
+                userActionAvro.getUserId(),
+                userActionAvro.getEventId(),
+                userActionAvro.getActionType());
     }
 
     private void updateUserAction(UserAction userAction, UserActionAvro userActionAvro) {
         Double rateUserAction = convertActionTypeToDouble(userAction.getActionType());
         Double rateUserActionAvro = convertActionTypeAvroToDouble(userActionAvro.getActionType());
+
         if (rateUserActionAvro > rateUserAction) {
-            userAction.setActionType(
-                    convertActionTypeAvroToActionType(userActionAvro.getActionType()));
+            log.debug("Upgrading user action: userId={}, eventId={}, from {} (rate={}) to {} (rate={})",
+                    userAction.getUserId(),
+                    userAction.getEventId(),
+                    userAction.getActionType(), rateUserAction,
+                    userActionAvro.getActionType(), rateUserActionAvro);
+
+            userAction.setActionType(convertActionTypeAvroToActionType(userActionAvro.getActionType()));
             userAction.setTimestamp(userActionAvro.getTimestamp());
-            userActionRepository.save(userAction);
+
+            UserAction updated = userActionRepository.save(userAction);
+            log.info("User action updated successfully: id={}, userId={}, eventId={}, newActionType={}",
+                    updated.getId(),
+                    userAction.getUserId(),
+                    userAction.getEventId(),
+                    userActionAvro.getActionType());
+        } else {
+            log.trace("No update needed: existing action {} (rate={}) has higher or equal weight than new action {} (rate={})",
+                    userAction.getActionType(), rateUserAction,
+                    userActionAvro.getActionType(), rateUserActionAvro);
         }
     }
 
@@ -65,9 +101,11 @@ public class UserActionHandler {
             case LIKE -> {
                 return ActionType.LIKE;
             }
-            default ->
-                    throw new ActionTypeNotFound(
+            default -> {
+                log.error("Unknown Avro action type: {}", actionTypeAvro);
+                throw new ActionTypeNotFound(
                             "Action type " + actionTypeAvro.name() + " not found");
+            }
         }
     }
 
@@ -82,9 +120,11 @@ public class UserActionHandler {
             case LIKE -> {
                 return LIKE_RATE;
             }
-            default ->
+            default -> {
+                log.warn("Unknown action type for weight conversion: {}", actionTypeAvro);
                     throw new ActionTypeNotFound(
                             "Action type " + actionTypeAvro.name() + " not found");
+            }
         }
     }
 
@@ -99,8 +139,10 @@ public class UserActionHandler {
             case LIKE -> {
                 return LIKE_RATE;
             }
-            default ->
-                    throw new ActionTypeNotFound("Action type " + actionType.name() + " not found");
+            default -> {
+                log.warn("Unknown action type for weight conversion: {}", actionType);
+                throw new ActionTypeNotFound("Action type " + actionType.name() + " not found");
+            }
         }
     }
 }

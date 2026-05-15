@@ -27,58 +27,86 @@ public class UserActionHandlerImpl implements UserActionHandler {
 
     @Override
     public void handle(UserActionProto userActionProto) {
-        log.info(
-                "Start of converting UserActionProto with ActionType {} to Avro",
-                userActionProto.getActionType().name());
+        log.debug("Handling user action: userId={}, eventId={}, actionType={}, timestamp={}",
+                userActionProto.getUserId(),
+                userActionProto.getEventId(),
+                userActionProto.getActionType(),
+                userActionProto.getTimestamp());
+
+        log.trace("Converting UserActionProto to UserActionAvro");
         UserActionAvro userActionAvro = protoToAvro(userActionProto);
-        log.debug(
-                "End of converting UserActionProto with ActionType {} to Avro {}",
-                userActionProto.getActionType().name(),
+        log.trace("Conversion completed: UserActionAvro={}", userActionAvro);
+
+        String topic = kafkaProducerConfig.getUserActionTopic();
+        ProducerRecord<Long, UserActionAvro> record = new ProducerRecord<>(
+                topic,
+                null,  // partition (null = auto-assign)
+                userActionAvro.getTimestamp().toEpochMilli(),  // key for ordering
+                userActionAvro.getEventId(),  // key for partitioning
                 userActionAvro);
-        ProducerRecord<Long, UserActionAvro> record =
-                new ProducerRecord<>(
-                        kafkaProducerConfig.getUserActionTopic(),
-                        null,
-                        userActionAvro.getTimestamp().toEpochMilli(),
-                        userActionAvro.getEventId(),
-                        userActionAvro);
-        log.trace("Save user action {} in topic {}", userActionAvro, record.topic());
-        kafkaProducer.send(
-                record,
-                (metadata, exception) -> {
-                    if (exception != null) {
-                        log.error("Kafka send failed", exception);
-                    } else {
-                        log.info(
-                                "Message sent to topic {} partition {} offset {}",
-                                metadata.topic(),
-                                metadata.partition(),
-                                metadata.offset());
-                    }
-                });
+
+        log.trace("Sending message to Kafka: topic={}, key={}, eventId={}",
+                topic, record.key(), userActionAvro.getEventId());
+
+        kafkaProducer.send(record, (metadata, exception) -> {
+            if (exception != null) {
+                log.error("Failed to send user action to Kafka: topic={}, eventId={}, error={}",
+                        topic, userActionAvro.getEventId(), exception.getMessage(), exception);
+            } else {
+                log.debug("User action sent to Kafka successfully: topic={}, partition={}, offset={}, eventId={}",
+                        metadata.topic(),
+                        metadata.partition(),
+                        metadata.offset(),
+                        userActionAvro.getEventId());
+            }
+        });
+
+        // Flush to ensure message is sent (consider async in production)
         kafkaProducer.flush();
+        log.trace("Kafka producer flushed for user action: userId={}, eventId={}",
+                userActionProto.getUserId(), userActionProto.getEventId());
     }
 
     @Override
     public UserActionAvro protoToAvro(UserActionProto userActionProto) {
-        Instant timestamp =
-                Instant.ofEpochSecond(
-                        userActionProto.getTimestamp().getSeconds(),
-                        userActionProto.getTimestamp().getNanos());
+        log.trace("Converting timestamp: seconds={}, nanos={}",
+                userActionProto.getTimestamp().getSeconds(),
+                userActionProto.getTimestamp().getNanos());
+
+        Instant timestamp = Instant.ofEpochSecond(
+                userActionProto.getTimestamp().getSeconds(),
+                userActionProto.getTimestamp().getNanos());
+
+        ActionTypeAvro actionTypeAvro = getActionTypeAvroFromProto(userActionProto.getActionType());
+        log.trace("Mapped ActionTypeProto {} to ActionTypeAvro {}",
+                userActionProto.getActionType(), actionTypeAvro);
+
         return UserActionAvro.newBuilder()
                 .setUserId(userActionProto.getUserId())
                 .setEventId(userActionProto.getEventId())
-                .setActionType(getActionTypeAvroFromProto(userActionProto.getActionType()))
+                .setActionType(actionTypeAvro)
                 .setTimestamp(timestamp)
                 .build();
     }
 
     private ActionTypeAvro getActionTypeAvroFromProto(ActionTypeProto actionTypeProto) {
         return switch (actionTypeProto) {
-            case ACTION_VIEW -> ActionTypeAvro.VIEW;
-            case ACTION_REGISTER -> ActionTypeAvro.REGISTER;
-            case ACTION_LIKE -> ActionTypeAvro.LIKE;
-            default -> null;
+            case ACTION_VIEW -> {
+                log.trace("Mapped ACTION_VIEW proto to VIEW avro");
+                yield ActionTypeAvro.VIEW;
+            }
+            case ACTION_REGISTER -> {
+                log.trace("Mapped ACTION_REGISTER proto to REGISTER avro");
+                yield ActionTypeAvro.REGISTER;
+            }
+            case ACTION_LIKE -> {
+                log.trace("Mapped ACTION_LIKE proto to LIKE avro");
+                yield ActionTypeAvro.LIKE;
+            }
+            default -> {
+                log.warn("Unknown ActionTypeProto value: {}, defaulting to null", actionTypeProto);
+                yield null;
+            }
         };
     }
 }

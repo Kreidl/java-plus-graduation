@@ -91,12 +91,14 @@ public class EventPublicController {
     public List<EventShortDto> getRecommendations(
             @RequestHeader("X-EWM-USER-ID") long userId,
             @RequestParam(defaultValue = "10") int maxResult) {
+        log.info("Public get recommendations for user with userId={} requested", userId);
         return eventService.getRecommendations(userId, maxResult);
     }
 
     @PutMapping("/{eventId}/like")
     public void addLike(
             @PathVariable @Positive Long eventId, @RequestHeader("X-EWM-USER-ID") long userId) {
+        log.info("Public add like for user with userId={} requested", userId);
         eventService.addLike(eventId, userId);
     }
 }

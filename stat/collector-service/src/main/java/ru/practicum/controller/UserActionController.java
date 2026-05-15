@@ -22,15 +22,32 @@ public class UserActionController extends UserActionControllerGrpc.UserActionCon
     @Override
     public void collectUserAction(
             UserActionProto userActionProto, StreamObserver<Empty> responseObserver) {
+
+        log.info("gRPC request: collectUserAction(userId={}, eventId={}, actionType={})",
+                userActionProto.getUserId(),
+                userActionProto.getEventId(),
+                userActionProto.getActionType());
+
         try {
-            log.info("Saving user action {}", userActionProto.toString());
+            log.debug("Processing user action: {}", userActionProto);
             userActionHandler.handle(userActionProto);
+
             responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();
+            log.debug("gRPC response completed successfully: collectUserAction");
+
         } catch (Exception e) {
+            log.error("Error processing user action: userId={}, eventId={}, actionType={}, error={}",
+                    userActionProto.getUserId(),
+                    userActionProto.getEventId(),
+                    userActionProto.getActionType(),
+                    e.getMessage(), e);
+
             responseObserver.onError(
                     new StatusRuntimeException(
-                            Status.INTERNAL.withDescription(e.getLocalizedMessage()).withCause(e)));
+                            Status.INTERNAL
+                                    .withDescription("Failed to process user action: " + e.getMessage())
+                                    .withCause(e)));
         }
     }
 }
