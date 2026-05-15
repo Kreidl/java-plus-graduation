@@ -65,4 +65,7 @@ public class Event {
 
     @Column(name = "confirmed_requests", nullable = false)
     Long confirmedRequests;
+
+    @Column(name = "rating")
+    private Double rating;
 }

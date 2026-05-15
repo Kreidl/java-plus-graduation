@@ -6,8 +6,10 @@ import java.util.Map;
 import ru.practicum.feign.fallback.ParticipationRequestFeignFallback;
 
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import feign.FeignException;
 
@@ -19,4 +21,8 @@ public interface ParticipationRequestFeign {
     @PostMapping("/confirmed")
     Map<Long, Long> countConfirmedByEventIds(@RequestBody Collection<Long> eventIds)
             throws FeignException;
+
+    @GetMapping
+    Boolean existsByRequesterIdAndEventId(
+            @RequestParam Long requesterId, @RequestParam Long eventId);
 }

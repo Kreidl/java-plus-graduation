@@ -32,11 +32,11 @@ public class EventMapper {
                 newEventDto.requestModeration(),
                 EventState.PENDING,
                 newEventDto.title(),
-                0L);
+                0L,
+                0.0);
     }
 
-    public EventFullDto mapToFullDto(
-            Event event, Long views, Long commentaries, UserShortDto userShortDto) {
+    public EventFullDto mapToFullDto(Event event, Long commentaries, UserShortDto userShortDto) {
         return new EventFullDto(
                 event.getAnnotation(),
                 CategoryMapper.mapToDto(event.getCategory()),
@@ -53,12 +53,11 @@ public class EventMapper {
                 event.getRequestModeration(),
                 event.getState(),
                 event.getTitle(),
-                views,
+                event.getRating(),
                 commentaries);
     }
 
-    public EventShortDto mapToShortDto(
-            Event event, Long views, Long commentaries, UserShortDto userShortDto) {
+    public EventShortDto mapToShortDto(Event event, Long commentaries, UserShortDto userShortDto) {
         return new EventShortDto(
                 event.getAnnotation(),
                 CategoryMapper.mapToDto(event.getCategory()),
@@ -68,7 +67,7 @@ public class EventMapper {
                 userShortDto,
                 event.getPaid(),
                 event.getTitle(),
-                views,
+                event.getRating(),
                 commentaries);
     }
 

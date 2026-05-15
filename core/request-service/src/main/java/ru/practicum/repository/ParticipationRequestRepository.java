@@ -49,13 +49,12 @@ public interface ParticipationRequestRepository extends JpaRepository<Participat
         }
 
         return countByEventIdsAndStatusRaw(validEventIds, EventRequestStatus.CONFIRMED).stream()
-                .filter(r -> r.getEventId() != null) // ✅ Фильтруем null в результате
-                .filter(r -> r.getCnt() != null) // ✅ На всякий случай
+                .filter(r -> r.getEventId() != null)
+                .filter(r -> r.getCnt() != null)
                 .collect(
                         Collectors.toMap(
                                 ConfirmedRequestsCount::getEventId,
                                 ConfirmedRequestsCount::getCnt,
-                                (v1, v2) -> v1 + v2 // ✅ merge function на случай дубликатов ключей
-                                ));
+                                (v1, v2) -> v1 + v2));
     }
 }

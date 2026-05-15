@@ -24,4 +24,9 @@ public class ParticipationRequestControllerFeignClient implements ParticipationR
         log.info("API get count confirmed requests requested to eventIds:{}", eventIds);
         return participationRequestService.countConfirmedByEventIds(eventIds);
     }
+
+    @Override
+    public Boolean existsByRequesterIdAndEventId(Long requesterId, Long eventId) {
+        return participationRequestService.existsByRequesterIdAndEventId(requesterId, eventId);
+    }
 }

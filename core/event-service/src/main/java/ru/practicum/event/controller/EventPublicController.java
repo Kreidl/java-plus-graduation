@@ -66,9 +66,12 @@ public class EventPublicController {
     }
 
     @GetMapping("/{eventId}")
-    public EventFullDto getEventById(@PathVariable Long eventId, HttpServletRequest request) {
+    public EventFullDto getEventById(
+            @PathVariable Long eventId,
+            @RequestHeader("X-EWM-USER-ID") long userId,
+            HttpServletRequest request) {
         log.info("Public get event with eventId={} requested", eventId);
-        return eventService.getById(eventId, request);
+        return eventService.getById(eventId, userId, request);
     }
 
     @GetMapping("/{eventId}/comments")
@@ -82,5 +85,18 @@ public class EventPublicController {
                 from,
                 size);
         return commentFeign.getAllCommentsPaged(eventId, from, size);
+    }
+
+    @GetMapping("/recommendations")
+    public List<EventShortDto> getRecommendations(
+            @RequestHeader("X-EWM-USER-ID") long userId,
+            @RequestParam(defaultValue = "10") int maxResult) {
+        return eventService.getRecommendations(userId, maxResult);
+    }
+
+    @PutMapping("/{eventId}/like")
+    public void addLike(
+            @PathVariable @Positive Long eventId, @RequestHeader("X-EWM-USER-ID") long userId) {
+        eventService.addLike(eventId, userId);
     }
 }

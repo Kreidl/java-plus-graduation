@@ -1,13 +1,14 @@
 package ru.practicum.event.service;
 
 import java.util.Collection;
+import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 import ru.practicum.event.dto.*;
 
 public interface EventService {
-    EventFullDto getById(Long eventId, HttpServletRequest request);
+    EventFullDto getById(Long eventId, Long userId, HttpServletRequest request);
 
     Collection<EventShortDto> getEvents(EventsPublicGetRequest getRequest);
 
@@ -28,4 +29,8 @@ public interface EventService {
     Boolean existsById(Long eventId);
 
     void updateConfirmedRequests(Long eventId, Long confirmedRequests);
+
+    List<EventShortDto> getRecommendations(long userId, int maxResult);
+
+    void addLike(Long eventId, long userId);
 }

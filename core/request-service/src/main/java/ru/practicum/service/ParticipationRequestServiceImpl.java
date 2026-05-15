@@ -1,11 +1,15 @@
 package ru.practicum.service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import java.util.*;
 
+import ru.practicum.client.collector.CollectorGrpcClient;
 import ru.practicum.event.dto.EventCheckDto;
 import ru.practicum.event.enums.EventState;
+import ru.practicum.ewm.stats.proto.ActionTypeProto;
+import ru.practicum.ewm.stats.proto.UserActionProto;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.ForbiddenAccessException;
 import ru.practicum.exception.NotFoundException;
@@ -23,6 +27,8 @@ import ru.practicum.user.dto.UserShortDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.protobuf.Timestamp;
+
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +42,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     private final ParticipationRequestRepository requestRepository;
     private final EventFeign eventFeign;
     private final UserFeign userFeign;
+    private final CollectorGrpcClient collectorGrpcClient;
 
     @Override
     @Transactional
@@ -97,6 +104,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         if (EventRequestStatus.CONFIRMED.equals(saved.getStatus())) {
             updateConfirmedRequests(event.id());
         }
+        sendAction(userId, eventId, ActionTypeProto.ACTION_REGISTER);
         return ParticipationRequestMapper.toDto(saved);
     }
 
@@ -231,6 +239,11 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         return requestRepository.countConfirmedByEventIds(eventIds);
     }
 
+    @Override
+    public Boolean existsByRequesterIdAndEventId(Long requesterId, Long eventId) {
+        return requestRepository.existsByEventIdAndRequesterId(eventId, requesterId);
+    }
+
     private EventRequestStatusUpdateResult confirmRequests(
             EventCheckDto event, List<ParticipationRequest> requests) {
         int limit = event.participantLimit() == null ? 0 : event.participantLimit();
@@ -339,6 +352,25 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         } catch (FeignException e) {
             log.error("Failed to fetch event {} via Feign: {}", eventId, e.getMessage(), e);
             throw new ConflictException("Failed to validate event with id=" + eventId);
+        }
+    }
+
+    private void sendAction(Long userId, Long eventId, ActionTypeProto actionTypeProto) {
+        try {
+            UserActionProto userActionProto =
+                    UserActionProto.newBuilder()
+                            .setUserId(userId)
+                            .setEventId(eventId)
+                            .setActionType(actionTypeProto)
+                            .setTimestamp(
+                                    Timestamp.newBuilder()
+                                            .setSeconds(Instant.now().getEpochSecond())
+                                            .setNanos(Instant.now().getNano())
+                                            .build())
+                            .build();
+            collectorGrpcClient.sendUserAction(userActionProto);
+        } catch (Exception e) {
+            log.error("Error sending user action");
         }
     }
 }

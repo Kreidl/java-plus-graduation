@@ -22,5 +22,5 @@ public record EventFullDto(
         boolean requestModeration,
         EventState state,
         String title,
-        Long views,
+        Double rating,
         Long commentaries) {}
