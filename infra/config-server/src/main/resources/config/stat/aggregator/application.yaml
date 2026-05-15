@@ -1,6 +1,3 @@
-server:
-  port: 0
-
 aggregator:
   kafka:
     event-similarity-producer-properties:
