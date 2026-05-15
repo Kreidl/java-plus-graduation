@@ -25,9 +25,9 @@ analyzer:
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/analyzer
-    username: analyzer
-    password: "12345"
+    url: jdbc:postgresql://localhost:12999/analyzer
+    username: analyzer_user
+    password: secret
   jpa:
     hibernate:
       ddl-auto: validate
