@@ -36,23 +36,34 @@ public class AggregatorUpdater {
     private final Double LIKE_RATE = 1.0;
 
     public List<EventSimilarityAvro> handle(ConsumerRecord<Long, UserActionAvro> record) {
-        log.debug("Processing user action: key={}, offset={}, partition={}",
-                record.key(), record.offset(), record.partition());
+        log.debug(
+                "Processing user action: key={}, offset={}, partition={}",
+                record.key(),
+                record.offset(),
+                record.partition());
 
         UserActionAvro userActionAvro = record.value();
         Long eventId = userActionAvro.getEventId();
         Long userId = userActionAvro.getUserId();
         Double newWeight = convertActionTypeToWeight(userActionAvro.getActionType());
 
-        log.trace("User action details: eventId={}, userId={}, actionType={}, weight={}",
-                eventId, userId, userActionAvro.getActionType(), newWeight);
+        log.trace(
+                "User action details: eventId={}, userId={}, actionType={}, weight={}",
+                eventId,
+                userId,
+                userActionAvro.getActionType(),
+                newWeight);
 
         Map<Long, Double> eventWeights = eventsUserMaxWeight.get(eventId);
         Double oldWeight = (eventWeights != null) ? eventWeights.getOrDefault(userId, 0.0) : 0.0;
 
         if (newWeight <= oldWeight) {
-            log.debug("Weight unchanged or decreased for user {} on event {}: old={}, new={}",
-                    userId, eventId, oldWeight, newWeight);
+            log.debug(
+                    "Weight unchanged or decreased for user {} on event {}: old={}, new={}",
+                    userId,
+                    eventId,
+                    oldWeight,
+                    newWeight);
             return List.of();
         }
 
@@ -65,11 +76,17 @@ public class AggregatorUpdater {
         double newSum = eventsSumWeights.getOrDefault(eventId, 0.0) + diff;
         eventsSumWeights.put(eventId, newSum);
 
-        log.debug("Updated weights for event {}: user={}, oldWeight={}, newWeight={}, newSum={}",
-                eventId, userId, oldWeight, newWeight, newSum);
+        log.debug(
+                "Updated weights for event {}: user={}, oldWeight={}, newWeight={}, newSum={}",
+                eventId,
+                userId,
+                oldWeight,
+                newWeight,
+                newSum);
 
         // Calculate and return updated similarities
-        return calculateEventSimilarity(eventId, userId, oldWeight, newWeight, userActionAvro.getTimestamp());
+        return calculateEventSimilarity(
+                eventId, userId, oldWeight, newWeight, userActionAvro.getTimestamp());
     }
 
     private List<EventSimilarityAvro> calculateEventSimilarity(
@@ -86,8 +103,10 @@ public class AggregatorUpdater {
             Double otherWeight = (eventWeights != null) ? eventWeights.get(userId) : null;
 
             if (otherWeight == null) {
-                log.trace("User {} has no interaction with event {}, skipping similarity calculation",
-                        userId, otherEventId);
+                log.trace(
+                        "User {} has no interaction with event {}, skipping similarity calculation",
+                        userId,
+                        otherEventId);
                 continue;
             }
 
@@ -95,15 +114,20 @@ public class AggregatorUpdater {
             long first = Math.min(eventId, otherEventId);
             long second = Math.max(eventId, otherEventId);
 
-            Map<Long, Double> pairSums = eventsMinWeightsSum.computeIfAbsent(first, k -> new HashMap<>());
+            Map<Long, Double> pairSums =
+                    eventsMinWeightsSum.computeIfAbsent(first, k -> new HashMap<>());
             double currentMin = pairSums.getOrDefault(second, 0.0);
             double oldMin = Math.min(oldWeight, otherWeight);
             double newMin = Math.min(newWeight, otherWeight);
             double diff = newMin - oldMin;
 
             pairSums.put(second, currentMin + diff);
-            log.trace("Updated min-weight sum for pair ({}, {}): diff={}, newSum={}",
-                    first, second, diff, currentMin + diff);
+            log.trace(
+                    "Updated min-weight sum for pair ({}, {}): diff={}, newSum={}",
+                    first,
+                    second,
+                    diff,
+                    currentMin + diff);
 
             // Calculate cosine similarity
             Double sum1 = eventsSumWeights.get(first);
@@ -117,19 +141,26 @@ public class AggregatorUpdater {
             }
 
             if (similarity > 0) {
-                EventSimilarityAvro similarityAvro = EventSimilarityAvro.newBuilder()
-                        .setEventA(first)
-                        .setEventB(second)
-                        .setScore(similarity)
-                        .setTimestamp(timestamp)
-                        .build();
+                EventSimilarityAvro similarityAvro =
+                        EventSimilarityAvro.newBuilder()
+                                .setEventA(first)
+                                .setEventB(second)
+                                .setScore(similarity)
+                                .setTimestamp(timestamp)
+                                .build();
                 eventSimilarityList.add(similarityAvro);
-                log.debug("Generated similarity record: eventA={}, eventB={}, score={}",
-                        first, second, similarity);
+                log.debug(
+                        "Generated similarity record: eventA={}, eventB={}, score={}",
+                        first,
+                        second,
+                        similarity);
             }
         }
 
-        log.debug("Generated {} similarity records for event {}", eventSimilarityList.size(), eventId);
+        log.debug(
+                "Generated {} similarity records for event {}",
+                eventSimilarityList.size(),
+                eventId);
         return eventSimilarityList;
     }
 

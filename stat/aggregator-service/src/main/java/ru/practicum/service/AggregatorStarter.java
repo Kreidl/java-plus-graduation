@@ -36,15 +36,20 @@ public class AggregatorStarter {
     public void start() {
         log.info("Starting AggregatorStarter service");
 
-        KafkaConsumer<Long, UserActionAvro> consumer = kafkaConsumerConfig.createKafkaUserActionConsumer();
-        KafkaProducer<Long, EventSimilarityAvro> producer = kafkaProducerConfig.createKafkaEventSimilarityProducer();
+        KafkaConsumer<Long, UserActionAvro> consumer =
+                kafkaConsumerConfig.createKafkaUserActionConsumer();
+        KafkaProducer<Long, EventSimilarityAvro> producer =
+                kafkaProducerConfig.createKafkaEventSimilarityProducer();
 
         log.info("Kafka consumer and producer initialized");
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Shutdown hook triggered, waking up consumer");
-            consumer.wakeup();
-        }));
+        Runtime.getRuntime()
+                .addShutdownHook(
+                        new Thread(
+                                () -> {
+                                    log.info("Shutdown hook triggered, waking up consumer");
+                                    consumer.wakeup();
+                                }));
 
         try {
             String topic = kafkaConsumerConfig.getUserActionTopic();
@@ -52,7 +57,8 @@ public class AggregatorStarter {
             log.info("Subscribed to Kafka topic: {}", topic);
 
             while (true) {
-                ConsumerRecords<Long, UserActionAvro> records = consumer.poll(CONSUME_ATTEMPT_TIMEOUT);
+                ConsumerRecords<Long, UserActionAvro> records =
+                        consumer.poll(CONSUME_ATTEMPT_TIMEOUT);
 
                 if (records.isEmpty()) {
                     log.trace("No records received in this poll cycle");
@@ -63,13 +69,18 @@ public class AggregatorStarter {
 
                 int processedCount = 0;
                 for (ConsumerRecord<Long, UserActionAvro> record : records) {
-                    log.trace("Processing record: key={}, offset={}, partition={}",
-                            record.key(), record.offset(), record.partition());
+                    log.trace(
+                            "Processing record: key={}, offset={}, partition={}",
+                            record.key(),
+                            record.offset(),
+                            record.partition());
 
                     List<EventSimilarityAvro> eventsSimilarity = aggregatorUpdater.handle(record);
 
                     if (!eventsSimilarity.isEmpty()) {
-                        log.debug("Generated {} similarity records for user action", eventsSimilarity.size());
+                        log.debug(
+                                "Generated {} similarity records for user action",
+                                eventsSimilarity.size());
 
                         for (EventSimilarityAvro eventSimilarityAvro : eventsSimilarity) {
                             ProducerRecord<Long, EventSimilarityAvro> producerRecord =
@@ -78,14 +89,18 @@ public class AggregatorStarter {
                                             eventSimilarityAvro);
 
                             producer.send(producerRecord);
-                            log.debug("Sent similarity message to topic={} partition={}",
-                                    producerRecord.topic(), producerRecord.partition());
+                            log.debug(
+                                    "Sent similarity message to topic={} partition={}",
+                                    producerRecord.topic(),
+                                    producerRecord.partition());
 
                             manageOffsets(record, processedCount, consumer);
                             processedCount++;
                         }
                         consumer.commitAsync();
-                        log.trace("Committed offsets asynchronously after processing {} records", processedCount);
+                        log.trace(
+                                "Committed offsets asynchronously after processing {} records",
+                                processedCount);
                     }
                 }
             }
@@ -120,8 +135,11 @@ public class AggregatorStarter {
         OffsetAndMetadata offset = new OffsetAndMetadata(record.offset() + 1);
 
         currentOffsets.put(partition, offset);
-        log.trace("Tracked offset for topic={} partition={} offset={}",
-                record.topic(), record.partition(), record.offset() + 1);
+        log.trace(
+                "Tracked offset for topic={} partition={} offset={}",
+                record.topic(),
+                record.partition(),
+                record.offset() + 1);
 
         // Commit every 10 records to balance performance and durability
         if (count % 10 == 0) {
@@ -130,7 +148,11 @@ public class AggregatorStarter {
                     currentOffsets,
                     (offsets, exception) -> {
                         if (exception != null) {
-                            log.warn("Failed to commit offsets: {}, error={}", offsets, exception.getMessage(), exception);
+                            log.warn(
+                                    "Failed to commit offsets: {}, error={}",
+                                    offsets,
+                                    exception.getMessage(),
+                                    exception);
                         } else {
                             log.trace("Successfully committed offsets: {}", offsets);
                         }

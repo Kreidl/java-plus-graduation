@@ -357,25 +357,38 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
     private void sendAction(Long userId, Long eventId, ActionTypeProto actionTypeProto) {
         try {
-            log.trace("Preparing to send user action: userId={}, eventId={}, actionType={}",
-                    userId, eventId, actionTypeProto);
+            log.trace(
+                    "Preparing to send user action: userId={}, eventId={}, actionType={}",
+                    userId,
+                    eventId,
+                    actionTypeProto);
 
-            UserActionProto userActionProto = UserActionProto.newBuilder()
-                    .setUserId(userId)
-                    .setEventId(eventId)
-                    .setActionType(actionTypeProto)
-                    .setTimestamp(Timestamp.newBuilder()
-                            .setSeconds(Instant.now().getEpochSecond())
-                            .setNanos(Instant.now().getNano())
-                            .build())
-                    .build();
+            UserActionProto userActionProto =
+                    UserActionProto.newBuilder()
+                            .setUserId(userId)
+                            .setEventId(eventId)
+                            .setActionType(actionTypeProto)
+                            .setTimestamp(
+                                    Timestamp.newBuilder()
+                                            .setSeconds(Instant.now().getEpochSecond())
+                                            .setNanos(Instant.now().getNano())
+                                            .build())
+                            .build();
 
             collectorGrpcClient.sendUserAction(userActionProto);
-            log.debug("User action sent successfully: userId={}, eventId={}, actionType={}",
-                    userId, eventId, actionTypeProto);
+            log.debug(
+                    "User action sent successfully: userId={}, eventId={}, actionType={}",
+                    userId,
+                    eventId,
+                    actionTypeProto);
         } catch (Exception e) {
-            log.error("Failed to send user action: userId={}, eventId={}, actionType={}, error={}",
-                    userId, eventId, actionTypeProto, e.getMessage(), e);
+            log.error(
+                    "Failed to send user action: userId={}, eventId={}, actionType={}, error={}",
+                    userId,
+                    eventId,
+                    actionTypeProto,
+                    e.getMessage(),
+                    e);
         }
     }
 }

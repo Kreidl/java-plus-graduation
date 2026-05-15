@@ -24,22 +24,27 @@ public class UserActionHandler {
     private final Double LIKE_RATE = 1.0;
 
     public void handle(UserActionAvro userActionAvro) {
-        log.debug("Processing UserActionAvro: userId={}, eventId={}, actionType={}",
+        log.debug(
+                "Processing UserActionAvro: userId={}, eventId={}, actionType={}",
                 userActionAvro.getUserId(),
                 userActionAvro.getEventId(),
                 userActionAvro.getActionType());
 
-        Optional<UserAction> userActionOpt = userActionRepository.findByUserIdAndEventId(
-                userActionAvro.getUserId(), userActionAvro.getEventId());
+        Optional<UserAction> userActionOpt =
+                userActionRepository.findByUserIdAndEventId(
+                        userActionAvro.getUserId(), userActionAvro.getEventId());
 
         if (userActionOpt.isEmpty()) {
-            log.info("Creating new user action record: userId={}, eventId={}, actionType={}",
+            log.info(
+                    "Creating new user action record: userId={}, eventId={}, actionType={}",
                     userActionAvro.getUserId(),
                     userActionAvro.getEventId(),
                     userActionAvro.getActionType());
             createUserAction(userActionAvro);
         } else {
-            log.debug("Updating existing user action: userId={}, eventId={}, oldActionType={}, newActionType={}",
+            log.debug(
+                    "Updating existing user action: userId={}, eventId={}, oldActionType={},"
+                            + " newActionType={}",
                     userActionAvro.getUserId(),
                     userActionAvro.getEventId(),
                     userActionOpt.get().getActionType(),
@@ -56,7 +61,8 @@ public class UserActionHandler {
         userAction.setTimestamp(userActionAvro.getTimestamp());
 
         UserAction saved = userActionRepository.save(userAction);
-        log.info("User action created successfully: id={}, userId={}, eventId={}, actionType={}",
+        log.info(
+                "User action created successfully: id={}, userId={}, eventId={}, actionType={}",
                 saved.getId(),
                 userActionAvro.getUserId(),
                 userActionAvro.getEventId(),
@@ -68,25 +74,36 @@ public class UserActionHandler {
         Double rateUserActionAvro = convertActionTypeAvroToDouble(userActionAvro.getActionType());
 
         if (rateUserActionAvro > rateUserAction) {
-            log.debug("Upgrading user action: userId={}, eventId={}, from {} (rate={}) to {} (rate={})",
+            log.debug(
+                    "Upgrading user action: userId={}, eventId={}, from {} (rate={}) to {}"
+                            + " (rate={})",
                     userAction.getUserId(),
                     userAction.getEventId(),
-                    userAction.getActionType(), rateUserAction,
-                    userActionAvro.getActionType(), rateUserActionAvro);
+                    userAction.getActionType(),
+                    rateUserAction,
+                    userActionAvro.getActionType(),
+                    rateUserActionAvro);
 
-            userAction.setActionType(convertActionTypeAvroToActionType(userActionAvro.getActionType()));
+            userAction.setActionType(
+                    convertActionTypeAvroToActionType(userActionAvro.getActionType()));
             userAction.setTimestamp(userActionAvro.getTimestamp());
 
             UserAction updated = userActionRepository.save(userAction);
-            log.info("User action updated successfully: id={}, userId={}, eventId={}, newActionType={}",
+            log.info(
+                    "User action updated successfully: id={}, userId={}, eventId={},"
+                            + " newActionType={}",
                     updated.getId(),
                     userAction.getUserId(),
                     userAction.getEventId(),
                     userActionAvro.getActionType());
         } else {
-            log.trace("No update needed: existing action {} (rate={}) has higher or equal weight than new action {} (rate={})",
-                    userAction.getActionType(), rateUserAction,
-                    userActionAvro.getActionType(), rateUserActionAvro);
+            log.trace(
+                    "No update needed: existing action {} (rate={}) has higher or equal weight than"
+                            + " new action {} (rate={})",
+                    userAction.getActionType(),
+                    rateUserAction,
+                    userActionAvro.getActionType(),
+                    rateUserActionAvro);
         }
     }
 
@@ -103,8 +120,7 @@ public class UserActionHandler {
             }
             default -> {
                 log.error("Unknown Avro action type: {}", actionTypeAvro);
-                throw new ActionTypeNotFound(
-                            "Action type " + actionTypeAvro.name() + " not found");
+                throw new ActionTypeNotFound("Action type " + actionTypeAvro.name() + " not found");
             }
         }
     }
@@ -122,8 +138,7 @@ public class UserActionHandler {
             }
             default -> {
                 log.warn("Unknown action type for weight conversion: {}", actionTypeAvro);
-                    throw new ActionTypeNotFound(
-                            "Action type " + actionTypeAvro.name() + " not found");
+                throw new ActionTypeNotFound("Action type " + actionTypeAvro.name() + " not found");
             }
         }
     }

@@ -151,12 +151,15 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, Long> commentariesCount = getCommentariesCount(eventsSet);
 
-        List<EventFullDto> result = events.stream()
-                .map(event -> EventMapper.mapToFullDto(
-                        event,
-                        commentariesCount.getOrDefault(event.getId(), 0L),
-                        userFeign.getUserShortById(event.getInitiatorId())))
-                .toList();
+        List<EventFullDto> result =
+                events.stream()
+                        .map(
+                                event ->
+                                        EventMapper.mapToFullDto(
+                                                event,
+                                                commentariesCount.getOrDefault(event.getId(), 0L),
+                                                userFeign.getUserShortById(event.getInitiatorId())))
+                        .toList();
 
         log.debug("Returning {} admin event full DTOs", result.size());
         return result;
@@ -179,14 +182,20 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, Long> commentariesCount = getCommentariesCount(eventsSet);
 
-        List<EventShortDto> result = events.stream()
-                .map(event -> EventMapper.mapToShortDto(
-                        event,
-                        commentariesCount.getOrDefault(event.getId(), 0L),
-                        userShortDto))
-                .toList();
+        List<EventShortDto> result =
+                events.stream()
+                        .map(
+                                event ->
+                                        EventMapper.mapToShortDto(
+                                                event,
+                                                commentariesCount.getOrDefault(event.getId(), 0L),
+                                                userShortDto))
+                        .toList();
 
-        log.debug("Returning {} private event short DTOs for userId={}", result.size(), getRequest.userId());
+        log.debug(
+                "Returning {} private event short DTOs for userId={}",
+                result.size(),
+                getRequest.userId());
         return result;
     }
 
@@ -330,7 +339,9 @@ public class EventServiceImpl implements EventService {
                         .stream()
                         .map(RecommendedEventProto::getEventId)
                         .toList();
-        log.debug("Received {} recommended event IDs from gRPC service", recommendationsForUser.size());
+        log.debug(
+                "Received {} recommended event IDs from gRPC service",
+                recommendationsForUser.size());
 
         if (recommendationsForUser.isEmpty()) {
             log.debug("No recommendations found for userId={}", userId);
@@ -338,12 +349,15 @@ public class EventServiceImpl implements EventService {
         }
         List<Event> events = eventRepository.findAllById(recommendationsForUser);
         log.debug("Loaded {} events from database for recommendations", events.size());
-        List<EventShortDto> result = events.stream()
-                .map(event -> EventMapper.mapToShortDto(
-                        event,
-                        null,
-                        userFeign.getUserShortById(event.getInitiatorId())))
-                .toList();
+        List<EventShortDto> result =
+                events.stream()
+                        .map(
+                                event ->
+                                        EventMapper.mapToShortDto(
+                                                event,
+                                                null,
+                                                userFeign.getUserShortById(event.getInitiatorId())))
+                        .toList();
 
         log.info("Returning {} recommended events for userId={}", result.size(), userId);
         return result;
@@ -368,8 +382,11 @@ public class EventServiceImpl implements EventService {
 
     private void sendAction(Long userId, Long eventId, ActionTypeProto actionTypeProto) {
         try {
-            log.trace("Preparing to send user action: userId={}, eventId={}, actionType={}",
-                    userId, eventId, actionTypeProto);
+            log.trace(
+                    "Preparing to send user action: userId={}, eventId={}, actionType={}",
+                    userId,
+                    eventId,
+                    actionTypeProto);
 
             UserActionProto userActionProto =
                     UserActionProto.newBuilder()
@@ -383,11 +400,19 @@ public class EventServiceImpl implements EventService {
                                             .build())
                             .build();
             collectorGrpcClient.sendUserAction(userActionProto);
-            log.debug("User action sent successfully: userId={}, eventId={}, actionType={}",
-                    userId, eventId, actionTypeProto);
+            log.debug(
+                    "User action sent successfully: userId={}, eventId={}, actionType={}",
+                    userId,
+                    eventId,
+                    actionTypeProto);
         } catch (Exception e) {
-            log.error("Failed to send user action: userId={}, eventId={}, actionType={}, error={}",
-                    userId, eventId, actionTypeProto, e.getMessage(), e);
+            log.error(
+                    "Failed to send user action: userId={}, eventId={}, actionType={}, error={}",
+                    userId,
+                    eventId,
+                    actionTypeProto,
+                    e.getMessage(),
+                    e);
         }
     }
 
@@ -399,8 +424,11 @@ public class EventServiceImpl implements EventService {
         List<Long> eventIds = events.stream().map(Event::getId).toList();
         log.debug("Fetching comment counts for {} events", eventIds.size());
 
-        Map<Long, Long> result = commentFeign.countCommentsByEventIds(eventIds).stream()
-                .collect(Collectors.toMap(EventCommentCount::eventId, EventCommentCount::count));
+        Map<Long, Long> result =
+                commentFeign.countCommentsByEventIds(eventIds).stream()
+                        .collect(
+                                Collectors.toMap(
+                                        EventCommentCount::eventId, EventCommentCount::count));
 
         log.debug("Retrieved comment counts for {} events", result.size());
         return result;

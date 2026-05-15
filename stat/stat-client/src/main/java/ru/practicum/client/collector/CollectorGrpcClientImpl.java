@@ -16,7 +16,8 @@ public class CollectorGrpcClientImpl implements CollectorGrpcClient {
 
     @Override
     public void sendUserAction(UserActionProto userActionProto) {
-        log.trace("Sending user action via gRPC: userId={}, eventId={}, actionType={}",
+        log.trace(
+                "Sending user action via gRPC: userId={}, eventId={}, actionType={}",
                 userActionProto.getUserId(),
                 userActionProto.getEventId(),
                 userActionProto.getActionType());
@@ -25,10 +26,13 @@ public class CollectorGrpcClientImpl implements CollectorGrpcClient {
             client.collectUserAction(userActionProto);
             log.debug("User action sent successfully to collector service");
         } catch (Exception e) {
-            log.error("Failed to send user action to collector service: userId={}, eventId={}, error={}",
+            log.error(
+                    "Failed to send user action to collector service: userId={}, eventId={},"
+                            + " error={}",
                     userActionProto.getUserId(),
                     userActionProto.getEventId(),
-                    e.getMessage(), e);
+                    e.getMessage(),
+                    e);
             throw e;
         }
     }

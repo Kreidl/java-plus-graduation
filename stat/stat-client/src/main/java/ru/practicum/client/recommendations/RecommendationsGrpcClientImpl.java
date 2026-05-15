@@ -19,12 +19,16 @@ public class RecommendationsGrpcClientImpl implements RecommendationsGrpcClient 
 
     @Override
     public Stream<RecommendedEventProto> getRecommendationsForUser(Long userId, long maxResults) {
-        log.debug("Requesting recommendations via gRPC: userId={}, maxResults={}", userId, maxResults);
+        log.debug(
+                "Requesting recommendations via gRPC: userId={}, maxResults={}",
+                userId,
+                maxResults);
 
-        UserPredictionsRequestProto request = UserPredictionsRequestProto.newBuilder()
-                .setUserId(userId)
-                .setMaxResults(maxResults)
-                .build();
+        UserPredictionsRequestProto request =
+                UserPredictionsRequestProto.newBuilder()
+                        .setUserId(userId)
+                        .setMaxResults(maxResults)
+                        .build();
 
         Iterator<RecommendedEventProto> iterator = client.getRecommendationsForUser(request);
         log.trace("Received iterator from gRPC service for recommendations");
@@ -33,15 +37,20 @@ public class RecommendationsGrpcClientImpl implements RecommendationsGrpcClient 
     }
 
     @Override
-    public Stream<RecommendedEventProto> getSimilarEvents(Long eventId, Long userId, long maxResults) {
-        log.debug("Requesting similar events via gRPC: eventId={}, userId={}, maxResults={}",
-                eventId, userId, maxResults);
+    public Stream<RecommendedEventProto> getSimilarEvents(
+            Long eventId, Long userId, long maxResults) {
+        log.debug(
+                "Requesting similar events via gRPC: eventId={}, userId={}, maxResults={}",
+                eventId,
+                userId,
+                maxResults);
 
-        SimilarEventsRequestProto request = SimilarEventsRequestProto.newBuilder()
-                .setEventId(eventId)
-                .setUserId(userId)
-                .setMaxResults(maxResults)
-                .build();
+        SimilarEventsRequestProto request =
+                SimilarEventsRequestProto.newBuilder()
+                        .setEventId(eventId)
+                        .setUserId(userId)
+                        .setMaxResults(maxResults)
+                        .build();
 
         Iterator<RecommendedEventProto> iterator = client.getSimilarEvents(request);
         log.trace("Received iterator from gRPC service for similar events");
@@ -53,9 +62,8 @@ public class RecommendationsGrpcClientImpl implements RecommendationsGrpcClient 
     public Stream<RecommendedEventProto> getInteractionsCount(Set<Long> eventIds) {
         log.debug("Requesting interaction counts via gRPC for {} event IDs", eventIds.size());
 
-        InteractionsCountRequestProto request = InteractionsCountRequestProto.newBuilder()
-                .addAllEventId(eventIds)
-                .build();
+        InteractionsCountRequestProto request =
+                InteractionsCountRequestProto.newBuilder().addAllEventId(eventIds).build();
 
         Iterator<RecommendedEventProto> iterator = client.getInteractionsCount(request);
         log.trace("Received iterator from gRPC service for interaction counts");
@@ -72,7 +80,6 @@ public class RecommendationsGrpcClientImpl implements RecommendationsGrpcClient 
     private Stream<RecommendedEventProto> asStream(Iterator<RecommendedEventProto> iterator) {
         log.trace("Converting gRPC iterator to Java Stream");
         return StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
-                false);
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
     }
 }

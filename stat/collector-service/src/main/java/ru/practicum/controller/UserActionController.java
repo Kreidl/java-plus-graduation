@@ -23,7 +23,8 @@ public class UserActionController extends UserActionControllerGrpc.UserActionCon
     public void collectUserAction(
             UserActionProto userActionProto, StreamObserver<Empty> responseObserver) {
 
-        log.info("gRPC request: collectUserAction(userId={}, eventId={}, actionType={})",
+        log.info(
+                "gRPC request: collectUserAction(userId={}, eventId={}, actionType={})",
                 userActionProto.getUserId(),
                 userActionProto.getEventId(),
                 userActionProto.getActionType());
@@ -37,16 +38,19 @@ public class UserActionController extends UserActionControllerGrpc.UserActionCon
             log.debug("gRPC response completed successfully: collectUserAction");
 
         } catch (Exception e) {
-            log.error("Error processing user action: userId={}, eventId={}, actionType={}, error={}",
+            log.error(
+                    "Error processing user action: userId={}, eventId={}, actionType={}, error={}",
                     userActionProto.getUserId(),
                     userActionProto.getEventId(),
                     userActionProto.getActionType(),
-                    e.getMessage(), e);
+                    e.getMessage(),
+                    e);
 
             responseObserver.onError(
                     new StatusRuntimeException(
                             Status.INTERNAL
-                                    .withDescription("Failed to process user action: " + e.getMessage())
+                                    .withDescription(
+                                            "Failed to process user action: " + e.getMessage())
                                     .withCause(e)));
         }
     }

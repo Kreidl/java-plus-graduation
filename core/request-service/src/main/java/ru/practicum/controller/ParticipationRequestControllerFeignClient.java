@@ -27,7 +27,10 @@ public class ParticipationRequestControllerFeignClient implements ParticipationR
 
     @Override
     public Boolean existsByRequesterIdAndEventId(Long requesterId, Long eventId) {
-        log.info("API existing requested to eventId:{} by user with userId={}", eventId, requesterId);
+        log.info(
+                "API existing requested to eventId:{} by user with userId={}",
+                eventId,
+                requesterId);
         return participationRequestService.existsByRequesterIdAndEventId(requesterId, eventId);
     }
 }
