@@ -7,7 +7,6 @@ import ru.practicum.ewm.stats.proto.ActionTypeProto;
 import ru.practicum.ewm.stats.proto.UserActionProto;
 import ru.practicum.feign.EventFeign;
 import ru.practicum.repository.ParticipationRequestRepository;
-import ru.practicum.request.enums.EventRequestStatus;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -26,27 +25,27 @@ public class ParticipationRequestPostProcessor {
     private final ParticipationRequestRepository requestRepository;
     private final CollectorGrpcClient collectorGrpcClient;
 
-//    @Async("taskExecutor")
-//    public void updateConfirmedRequestsAsync(Long eventId) {
-//        try {
-//            log.debug("Async: Updating confirmed requests for event {}", eventId);
-//
-//            Long confirmed =
-//                    requestRepository.countByEventIdAndStatus(
-//                            eventId, EventRequestStatus.CONFIRMED);
-//
-//            eventFeign.updateConfirmedRequests(eventId, confirmed);
-//
-//            log.debug("Async: Sent updated count to event-service for event {}", eventId);
-//
-//        } catch (Exception e) {
-//            log.error(
-//                    "Async: Failed to update confirmed requests for event {}: {}",
-//                    eventId,
-//                    e.getMessage(),
-//                    e);
-//        }
-//    }
+    //    @Async("taskExecutor")
+    //    public void updateConfirmedRequestsAsync(Long eventId) {
+    //        try {
+    //            log.debug("Async: Updating confirmed requests for event {}", eventId);
+    //
+    //            Long confirmed =
+    //                    requestRepository.countByEventIdAndStatus(
+    //                            eventId, EventRequestStatus.CONFIRMED);
+    //
+    //            eventFeign.updateConfirmedRequests(eventId, confirmed);
+    //
+    //            log.debug("Async: Sent updated count to event-service for event {}", eventId);
+    //
+    //        } catch (Exception e) {
+    //            log.error(
+    //                    "Async: Failed to update confirmed requests for event {}: {}",
+    //                    eventId,
+    //                    e.getMessage(),
+    //                    e);
+    //        }
+    //    }
 
     @Async("taskExecutor")
     public void sendActionAsync(Long userId, Long eventId, ActionTypeProto actionTypeProto) {
