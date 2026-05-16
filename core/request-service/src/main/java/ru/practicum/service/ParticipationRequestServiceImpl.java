@@ -108,7 +108,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 saved.getStatus());
 
         if (EventRequestStatus.CONFIRMED.equals(saved.getStatus())) {
-            updateConfirmedRequests(eventId);
+            postProcessor.updateConfirmedRequestsAsync(eventId);
         }
 
         postProcessor.sendActionAsync(userId, eventId, ActionTypeProto.ACTION_REGISTER);
@@ -156,7 +156,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         ParticipationRequest saved = cancelRequestInTransaction(userId, requestId);
         log.info("Request {} cancelled successfully", requestId);
 
-        updateConfirmedRequests(saved.getEventId());
+        postProcessor.updateConfirmedRequestsAsync(saved.getEventId());
         return ParticipationRequestMapper.toDto(saved);
     }
 
@@ -229,7 +229,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         EventRequestStatusUpdateResult result =
                 updateRequestsInTransaction(eventId, updateRequest, event);
 
-        updateConfirmedRequests(eventId);
+        postProcessor.updateConfirmedRequestsAsync(eventId);
         return result;
     }
 
@@ -367,27 +367,6 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                         () ->
                                 new NotFoundException(
                                         "Request with id=%d not found".formatted(requestId)));
-    }
-
-    private void updateConfirmedRequests(Long eventId) {
-        try {
-            log.debug("Async: Updating confirmed requests for event {}", eventId);
-
-            Long confirmed =
-                    requestRepository.countByEventIdAndStatus(
-                            eventId, EventRequestStatus.CONFIRMED);
-
-            eventFeign.updateConfirmedRequests(eventId, confirmed);
-
-            log.debug("Async: Sent updated count to event-service for event {}", eventId);
-
-        } catch (Exception e) {
-            log.error(
-                    "Async: Failed to update confirmed requests for event {}: {}",
-                    eventId,
-                    e.getMessage(),
-                    e);
-        }
     }
 
     public EventCheckDto getEventOrThrowConflict(Long eventId) {

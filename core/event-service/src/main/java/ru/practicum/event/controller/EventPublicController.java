@@ -17,6 +17,7 @@ import ru.practicum.event.service.EventService;
 import ru.practicum.exception.ValidationException;
 import ru.practicum.feign.CommentFeign;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,8 +38,12 @@ public class EventPublicController {
             @RequestParam(required = false) String text,
             @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) Boolean paid,
-            @RequestParam(name = "rangeStart", required = false) LocalDateTime rangeStart,
-            @RequestParam(name = "rangeEnd", required = false) LocalDateTime rangeEnd,
+            @RequestParam(name = "rangeStart", required = false)
+                    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                    LocalDateTime rangeStart,
+            @RequestParam(name = "rangeEnd", required = false)
+                    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                    LocalDateTime rangeEnd,
             @RequestParam(defaultValue = "false") boolean onlyAvailable,
             @RequestParam(required = false) EventSortBy sort,
             @RequestParam(defaultValue = "0") @PositiveOrZero int from,
