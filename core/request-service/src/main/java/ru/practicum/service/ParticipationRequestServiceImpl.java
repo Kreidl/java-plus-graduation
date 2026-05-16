@@ -34,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ParticipationRequestServiceImpl implements ParticipationRequestService {
 
     private final ParticipationRequestRepository requestRepository;
@@ -137,6 +136,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
         log.debug("Fetching requests for userId={}", userId);
         getUserShortDtoOrThrowConflict(userId);
@@ -180,6 +180,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ParticipationRequestDto> getEventRequestsByInitiator(Long userId, Long eventId) {
         log.info("Fetching requests for event {} by initiator {}", eventId, userId);
 
@@ -271,12 +272,14 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<Long, Long> countConfirmedByEventIds(Collection<Long> eventIds) {
         log.debug("Counting confirmed requests for {} events", eventIds.size());
         return requestRepository.countConfirmedByEventIds(eventIds);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Boolean existsByRequesterIdAndEventId(Long requesterId, Long eventId) {
         return requestRepository.existsByEventIdAndRequesterId(eventId, requesterId);
     }
