@@ -35,7 +35,7 @@ public class ParticipationRequestPostProcessor {
                     requestRepository.countByEventIdAndStatus(
                             eventId, EventRequestStatus.CONFIRMED);
 
-            eventFeign.updateConfirmedRequests(eventId, confirmed != null ? confirmed : 0L);
+            eventFeign.updateConfirmedRequests(eventId, confirmed);
 
             log.debug("Async: Sent updated count to event-service for event {}", eventId);
 
