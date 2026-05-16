@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Transactional(readOnly = true) // ← Асинхронно, вне транзакций основного сервиса
 public class ParticipationRequestPostProcessor {
 
     private final EventFeign eventFeign;
@@ -51,7 +50,6 @@ public class ParticipationRequestPostProcessor {
     }
 
     @Async("taskExecutor")
-    @Transactional(readOnly = true)
     public void sendActionAsync(Long userId, Long eventId, ActionTypeProto actionTypeProto) {
         try {
             log.trace(
