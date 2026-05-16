@@ -26,27 +26,27 @@ public class ParticipationRequestPostProcessor {
     private final ParticipationRequestRepository requestRepository;
     private final CollectorGrpcClient collectorGrpcClient;
 
-    @Async("taskExecutor")
-    public void updateConfirmedRequestsAsync(Long eventId) {
-        try {
-            log.debug("Async: Updating confirmed requests for event {}", eventId);
-
-            Long confirmed =
-                    requestRepository.countByEventIdAndStatus(
-                            eventId, EventRequestStatus.CONFIRMED);
-
-            eventFeign.updateConfirmedRequests(eventId, confirmed);
-
-            log.debug("Async: Sent updated count to event-service for event {}", eventId);
-
-        } catch (Exception e) {
-            log.error(
-                    "Async: Failed to update confirmed requests for event {}: {}",
-                    eventId,
-                    e.getMessage(),
-                    e);
-        }
-    }
+//    @Async("taskExecutor")
+//    public void updateConfirmedRequestsAsync(Long eventId) {
+//        try {
+//            log.debug("Async: Updating confirmed requests for event {}", eventId);
+//
+//            Long confirmed =
+//                    requestRepository.countByEventIdAndStatus(
+//                            eventId, EventRequestStatus.CONFIRMED);
+//
+//            eventFeign.updateConfirmedRequests(eventId, confirmed);
+//
+//            log.debug("Async: Sent updated count to event-service for event {}", eventId);
+//
+//        } catch (Exception e) {
+//            log.error(
+//                    "Async: Failed to update confirmed requests for event {}: {}",
+//                    eventId,
+//                    e.getMessage(),
+//                    e);
+//        }
+//    }
 
     @Async("taskExecutor")
     public void sendActionAsync(Long userId, Long eventId, ActionTypeProto actionTypeProto) {
