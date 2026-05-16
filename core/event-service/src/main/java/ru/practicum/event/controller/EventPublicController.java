@@ -58,7 +58,9 @@ public class EventPublicController {
                         request);
         if (getRequest.hasRangeStart() && getRequest.hasRangeEnd()) {
             if (getRequest.rangeEnd().isBefore(getRequest.rangeStart())) {
-                throw new ValidationException("End date must be before start date");
+                throw new ValidationException(
+                        "Invalid date range: rangeEnd (%s) cannot be before rangeStart (%s)"
+                                .formatted(getRequest.rangeEnd(), getRequest.rangeStart()));
             }
         }
         log.info("Public get events requested with params= {}", getRequest);

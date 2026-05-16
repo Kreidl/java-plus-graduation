@@ -67,5 +67,5 @@ public class Event {
     Long confirmedRequests;
 
     @Column(name = "rating")
-    private Double rating;
+    Double rating;
 }
