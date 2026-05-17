@@ -21,4 +21,6 @@ public interface ParticipationRequestService {
             Long userId, Long eventId, EventRequestStatusUpdateRequest request);
 
     Map<Long, Long> countConfirmedByEventIds(Collection<Long> eventIds);
+
+    Boolean existsByRequesterIdAndEventId(Long requesterId, Long eventId);
 }

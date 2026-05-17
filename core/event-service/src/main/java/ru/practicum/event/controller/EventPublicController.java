@@ -17,6 +17,7 @@ import ru.practicum.event.service.EventService;
 import ru.practicum.exception.ValidationException;
 import ru.practicum.feign.CommentFeign;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,8 +38,12 @@ public class EventPublicController {
             @RequestParam(required = false) String text,
             @RequestParam(required = false) List<Long> categories,
             @RequestParam(required = false) Boolean paid,
-            @RequestParam(required = false) LocalDateTime rangeStart,
-            @RequestParam(required = false) LocalDateTime rangeEnd,
+            @RequestParam(name = "rangeStart", required = false)
+                    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                    LocalDateTime rangeStart,
+            @RequestParam(name = "rangeEnd", required = false)
+                    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                    LocalDateTime rangeEnd,
             @RequestParam(defaultValue = "false") boolean onlyAvailable,
             @RequestParam(required = false) EventSortBy sort,
             @RequestParam(defaultValue = "0") @PositiveOrZero int from,
@@ -58,7 +63,9 @@ public class EventPublicController {
                         request);
         if (getRequest.hasRangeStart() && getRequest.hasRangeEnd()) {
             if (getRequest.rangeEnd().isBefore(getRequest.rangeStart())) {
-                throw new ValidationException("End date must be before start date");
+                throw new ValidationException(
+                        "Invalid date range: rangeEnd (%s) cannot be before rangeStart (%s)"
+                                .formatted(getRequest.rangeEnd(), getRequest.rangeStart()));
             }
         }
         log.info("Public get events requested with params= {}", getRequest);
@@ -66,9 +73,12 @@ public class EventPublicController {
     }
 
     @GetMapping("/{eventId}")
-    public EventFullDto getEventById(@PathVariable Long eventId, HttpServletRequest request) {
+    public EventFullDto getEventById(
+            @PathVariable Long eventId,
+            @RequestHeader("X-EWM-USER-ID") long userId,
+            HttpServletRequest request) {
         log.info("Public get event with eventId={} requested", eventId);
-        return eventService.getById(eventId, request);
+        return eventService.getById(eventId, userId, request);
     }
 
     @GetMapping("/{eventId}/comments")
@@ -82,5 +92,20 @@ public class EventPublicController {
                 from,
                 size);
         return commentFeign.getAllCommentsPaged(eventId, from, size);
+    }
+
+    @GetMapping("/recommendations")
+    public List<EventShortDto> getRecommendations(
+            @RequestHeader("X-EWM-USER-ID") long userId,
+            @RequestParam(defaultValue = "10") int maxResult) {
+        log.info("Public get recommendations for user with userId={} requested", userId);
+        return eventService.getRecommendations(userId, maxResult);
+    }
+
+    @PutMapping("/{eventId}/like")
+    public void addLike(
+            @PathVariable @Positive Long eventId, @RequestHeader("X-EWM-USER-ID") long userId) {
+        log.info("Public add like for user with userId={} requested", userId);
+        eventService.addLike(eventId, userId);
     }
 }

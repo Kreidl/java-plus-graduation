@@ -4,8 +4,11 @@ import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import java.util.*;
 
+import jakarta.ws.rs.ServiceUnavailableException;
+
 import ru.practicum.event.dto.EventCheckDto;
 import ru.practicum.event.enums.EventState;
+import ru.practicum.ewm.stats.proto.ActionTypeProto;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.ForbiddenAccessException;
 import ru.practicum.exception.NotFoundException;
@@ -18,6 +21,7 @@ import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.enums.EventRequestStatus;
+import ru.practicum.service.processors.ParticipationRequestPostProcessor;
 import ru.practicum.user.dto.UserShortDto;
 
 import org.springframework.stereotype.Service;
@@ -30,20 +34,36 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ParticipationRequestServiceImpl implements ParticipationRequestService {
 
     private final ParticipationRequestRepository requestRepository;
+    private final ParticipationRequestPostProcessor postProcessor;
     private final EventFeign eventFeign;
     private final UserFeign userFeign;
 
     @Override
-    @Transactional
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         log.info("Creating participation request: userId={}, eventId={}", userId, eventId);
 
-        UserShortDto user = userFeign.getUserShortById(userId);
-        EventCheckDto event = getEventOrThrowConflict(eventId);
+        try {
+            getUserShortDtoOrThrowConflict(userId);
+            log.debug("Fetched user: userId={}", userId);
+        } catch (FeignException e) {
+            log.error("Failed to fetch user {}: {}", userId, e.getMessage());
+            throw new ServiceUnavailableException("User service unavailable");
+        }
+
+        EventCheckDto event;
+        try {
+            event = getEventOrThrowConflict(eventId);
+            log.debug("Fetched event: eventId={}", eventId);
+        } catch (FeignException.NotFound e) {
+            log.warn("Event {} not found or not published", eventId);
+            throw new ConflictException("Event with id=" + eventId + " not found or not published");
+        } catch (FeignException e) {
+            log.error("Failed to fetch event {}: {}", eventId, e.getMessage());
+            throw new ServiceUnavailableException("Event service unavailable");
+        }
 
         if (requestRepository.existsByEventIdAndRequesterId(eventId, userId)) {
             log.warn("Duplicate request: userId={} already requested eventId={}", userId, eventId);
@@ -80,30 +100,46 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             log.debug("Request auto-confirmed due to no moderation or unlimited participants");
         }
 
-        ParticipationRequest request =
-                ParticipationRequest.builder()
-                        .eventId(event.id())
-                        .requesterId(user.id())
-                        .created(LocalDateTime.now())
-                        .status(status)
-                        .build();
+        ParticipationRequest saved = saveRequestInTransaction(eventId, userId, status);
 
-        ParticipationRequest saved = requestRepository.save(request);
         log.info(
                 "Participation request created with id={}, status={}",
                 saved.getId(),
                 saved.getStatus());
 
         if (EventRequestStatus.CONFIRMED.equals(saved.getStatus())) {
-            updateConfirmedRequests(event.id());
+            updateConfirmedRequests(eventId);
         }
+
+        postProcessor.sendActionAsync(userId, eventId, ActionTypeProto.ACTION_REGISTER);
         return ParticipationRequestMapper.toDto(saved);
     }
 
+    @Transactional
+    public ParticipationRequest saveRequestInTransaction(
+            Long eventId, Long userId, EventRequestStatus eventRequestStatus) {
+        log.trace(
+                "Saving request in transaction: eventId={}, userId={}, status={}",
+                eventId,
+                userId,
+                eventRequestStatus);
+
+        ParticipationRequest request =
+                ParticipationRequest.builder()
+                        .eventId(eventId)
+                        .requesterId(userId)
+                        .created(LocalDateTime.now())
+                        .status(eventRequestStatus)
+                        .build();
+
+        return requestRepository.save(request);
+    }
+
     @Override
+    @Transactional(readOnly = true)
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
         log.debug("Fetching requests for userId={}", userId);
-        userFeign.getUserShortById(userId);
+        getUserShortDtoOrThrowConflict(userId);
         List<ParticipationRequestDto> result =
                 ParticipationRequestMapper.toDtoList(
                         requestRepository.findAllByRequesterIdOrderByCreatedDesc(userId));
@@ -112,11 +148,22 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     @Override
-    @Transactional
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         log.info("User {} cancelling request {}", userId, requestId);
 
-        userFeign.getUserShortById(userId);
+        getUserShortDtoOrThrowConflict(userId);
+
+        ParticipationRequest saved = cancelRequestInTransaction(userId, requestId);
+        log.info("Request {} cancelled successfully", requestId);
+
+        updateConfirmedRequests(saved.getEventId());
+        return ParticipationRequestMapper.toDto(saved);
+    }
+
+    @Transactional
+    public ParticipationRequest cancelRequestInTransaction(Long userId, Long requestId) {
+        log.trace("Cancelling request in transaction: userId={}, requestId={}", userId, requestId);
+
         ParticipationRequest request = getRequestByIdOrThrow(requestId);
 
         if (!request.getRequesterId().equals(userId)) {
@@ -129,18 +176,15 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         }
 
         request.setStatus(EventRequestStatus.CANCELED);
-        ParticipationRequest saved = requestRepository.save(request);
-        log.info("Request {} cancelled successfully", requestId);
-
-        updateConfirmedRequests(request.getEventId());
-        return ParticipationRequestMapper.toDto(saved);
+        return requestRepository.save(request);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ParticipationRequestDto> getEventRequestsByInitiator(Long userId, Long eventId) {
         log.info("Fetching requests for event {} by initiator {}", eventId, userId);
 
-        userFeign.getUserShortById(userId);
+        getUserShortDtoOrThrowConflict(userId);
         EventCheckDto event = getEventOrThrowConflict(eventId);
 
         if (!event.initiator().id().equals(userId)) {
@@ -161,7 +205,6 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     @Override
-    @Transactional
     public EventRequestStatusUpdateResult updateEventRequestsStatus(
             Long userId, Long eventId, EventRequestStatusUpdateRequest updateRequest) {
         log.info(
@@ -171,7 +214,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 updateRequest.requestIds(),
                 updateRequest.status());
 
-        userFeign.getUserShortById(userId);
+        getUserShortDtoOrThrowConflict(userId);
         EventCheckDto event = getEventOrThrowConflict(eventId);
 
         if (!event.initiator().id().equals(userId)) {
@@ -183,26 +226,31 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new ForbiddenAccessException(
                     "You can't update requests for event that is not yours");
         }
+        EventRequestStatusUpdateResult result =
+                updateRequestsInTransaction(eventId, updateRequest, event);
+
+        updateConfirmedRequests(eventId);
+        return result;
+    }
+
+    private EventRequestStatusUpdateResult updateRequestsInTransaction(
+            Long eventId, EventRequestStatusUpdateRequest updateRequest, EventCheckDto event) {
+
+        log.trace(
+                "Updating requests in transaction: eventId={}, status={}",
+                eventId,
+                updateRequest.status());
 
         Set<Long> ids = new HashSet<>(updateRequest.requestIds());
         List<ParticipationRequest> requests =
                 requestRepository.findAllByIdInAndEventId(ids, eventId);
 
         if (requests.size() != ids.size()) {
-            log.warn(
-                    "Expected {} requests, but found {} for event {}",
-                    ids.size(),
-                    requests.size(),
-                    eventId);
             throw new NotFoundException("Some requests were not found");
         }
 
         for (ParticipationRequest r : requests) {
             if (!EventRequestStatus.PENDING.equals(r.getStatus())) {
-                log.warn(
-                        "Request {} has status {}, only PENDING can be updated",
-                        r.getId(),
-                        r.getStatus());
                 throw new ConflictException("Only PENDING requests can be updated");
             }
         }
@@ -210,28 +258,34 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         EventRequestStatus targetStatus = updateRequest.status();
         if (EventRequestStatus.CONFIRMED.equals(targetStatus)) {
             log.debug("Confirming {} requests for event {}", requests.size(), eventId);
-            return confirmRequests(event, requests);
+            return confirmRequestsInTransaction(event, requests); // ← только БД!
         }
         if (EventRequestStatus.REJECTED.equals(targetStatus)) {
             log.debug("Rejecting {} requests for event {}", requests.size(), eventId);
             requests.forEach(r -> r.setStatus(EventRequestStatus.REJECTED));
             requestRepository.saveAll(requests);
-            updateConfirmedRequests(eventId);
             return new EventRequestStatusUpdateResult(
                     List.of(), ParticipationRequestMapper.toDtoList(requests));
         }
 
-        log.warn("Unsupported status update: {}", targetStatus);
         throw new ConflictException("Unsupported status update: " + targetStatus);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<Long, Long> countConfirmedByEventIds(Collection<Long> eventIds) {
         log.debug("Counting confirmed requests for {} events", eventIds.size());
         return requestRepository.countConfirmedByEventIds(eventIds);
     }
 
-    private EventRequestStatusUpdateResult confirmRequests(
+    @Override
+    @Transactional(readOnly = true)
+    public Boolean existsByRequesterIdAndEventId(Long requesterId, Long eventId) {
+        return requestRepository.existsByEventIdAndRequesterId(eventId, requesterId);
+    }
+
+    @Transactional
+    private EventRequestStatusUpdateResult confirmRequestsInTransaction(
             EventCheckDto event, List<ParticipationRequest> requests) {
         int limit = event.participantLimit() == null ? 0 : event.participantLimit();
         boolean moderation = Boolean.TRUE.equals(event.requestModeration());
@@ -296,7 +350,6 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             }
         }
 
-        updateConfirmedRequests(event.id());
         return new EventRequestStatusUpdateResult(
                 ParticipationRequestMapper.toDtoList(confirmedRequests),
                 ParticipationRequestMapper.toDtoList(rejectedRequests));
@@ -316,18 +369,28 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                                         "Request with id=%d not found".formatted(requestId)));
     }
 
-    @Transactional
-    public void updateConfirmedRequests(Long eventId) {
-        log.debug("Updating confirmed requests count for event {}", eventId);
-        Long confirmedRequests =
-                requestRepository.countByEventIdAndStatus(eventId, EventRequestStatus.CONFIRMED);
-        confirmedRequests = (confirmedRequests == null) ? 0 : confirmedRequests;
-        eventFeign.updateConfirmedRequests(eventId, confirmedRequests);
-        log.debug(
-                "Sent updated count {} to event-service for event {}", confirmedRequests, eventId);
+    private void updateConfirmedRequests(Long eventId) {
+        try {
+            log.debug("Async: Updating confirmed requests for event {}", eventId);
+
+            Long confirmed =
+                    requestRepository.countByEventIdAndStatus(
+                            eventId, EventRequestStatus.CONFIRMED);
+
+            eventFeign.updateConfirmedRequests(eventId, confirmed);
+
+            log.debug("Async: Sent updated count to event-service for event {}", eventId);
+
+        } catch (Exception e) {
+            log.error(
+                    "Async: Failed to update confirmed requests for event {}: {}",
+                    eventId,
+                    e.getMessage(),
+                    e);
+        }
     }
 
-    private EventCheckDto getEventOrThrowConflict(Long eventId) {
+    public EventCheckDto getEventOrThrowConflict(Long eventId) {
         log.debug("Fetching event check data for eventId={} via Feign", eventId);
         try {
             EventCheckDto event = eventFeign.getEventCheckDtoById(eventId);
@@ -339,6 +402,21 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         } catch (FeignException e) {
             log.error("Failed to fetch event {} via Feign: {}", eventId, e.getMessage(), e);
             throw new ConflictException("Failed to validate event with id=" + eventId);
+        }
+    }
+
+    public UserShortDto getUserShortDtoOrThrowConflict(Long userId) {
+        log.debug("Fetching user data for userId={} via Feign", userId);
+        try {
+            UserShortDto user = userFeign.getUserShortById(userId);
+            log.debug("Successfully fetched user data for userId={}", userId);
+            return user;
+        } catch (FeignException.NotFound e) {
+            log.debug("User {} not found via Feign, converting to ConflictException", userId);
+            throw new ConflictException("User with id=" + userId + " not found");
+        } catch (FeignException e) {
+            log.error("Failed to fetch user {} via Feign: {}", userId, e.getMessage(), e);
+            throw new ConflictException("Failed to validate user with id=" + userId);
         }
     }
 }

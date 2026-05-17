@@ -41,6 +41,14 @@ resilience4j:
         waitDurationInOpenState: 8000 # 8 секунд в миллисекундах
         permittedNumberOfCallsInHalfOpenState: 5
 
+grpc:
+  client:
+    collector:
+      address: 'discovery:///collector'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
 logging:
   level:
     feign: DEBUG

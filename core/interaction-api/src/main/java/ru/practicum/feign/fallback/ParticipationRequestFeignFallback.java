@@ -20,6 +20,12 @@ public class ParticipationRequestFeignFallback implements ParticipationRequestFe
         return Map.of();
     }
 
+    @Override
+    public Boolean existsByRequesterIdAndEventId(Long requesterId, Long eventId) {
+        fallback();
+        return null;
+    }
+
     private void fallback() {
         log.error("Fallback: request service is not responding");
         throw new RuntimeException("Request service is not responding, please try again later");

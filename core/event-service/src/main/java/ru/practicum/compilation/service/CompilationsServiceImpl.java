@@ -143,7 +143,6 @@ public class CompilationsServiceImpl implements CompilationsService {
                                         EventMapper.mapToShortDto(
                                                 event,
                                                 null,
-                                                null,
                                                 userFeign.getUserShortById(event.getInitiatorId())))
                         .toList();
 
